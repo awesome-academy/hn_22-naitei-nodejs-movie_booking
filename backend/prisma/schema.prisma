@@ -1,0 +1,269 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum HTTPMethod {
+  GET
+  POST
+  PUT
+  DELETE
+  PATCH
+}
+
+enum VerificationCodeType {
+  FORGOT_PASSWORD
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  name        String
+  phoneNumber String
+  avatar      String?
+  role        Role     @relation(fields: [roleId], references: [id])
+  roleId      Int
+  isSuspended Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+
+  createdRoles       Role[]         @relation("CreatedRoles")
+  updatedRoles       Role[]         @relation("UpdatedRoles")
+  createdPermissions Permission[]   @relation("CreatedPermissions")
+  updatedPermissions Permission[]   @relation("UpdatedPermissions")
+  refreshTokens      RefreshToken[]
+  tickets            Ticket[]
+  payments           Payment[]
+  bookings           Booking[]
+  comments           Comment[]
+  notifications      Notification[]
+  favorites          Favorite[]
+}
+
+model Role {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String
+  isActive    Boolean @default(true)
+  createdById Int?
+  updatedById Int?
+
+  createdBy   User?            @relation("CreatedRoles", fields: [createdById], references: [id])
+  updatedBy   User?            @relation("UpdatedRoles", fields: [updatedById], references: [id])
+  users       User[]
+  permissions PermissionRole[]
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime
+}
+
+model Permission {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String
+  path        String
+  method      HTTPMethod
+  createdById Int?
+  updatedById Int?
+
+  createdBy User?            @relation("CreatedPermissions", fields: [createdById], references: [id])
+  updatedBy User?            @relation("UpdatedPermissions", fields: [updatedById], references: [id])
+  roles     PermissionRole[]
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime
+}
+
+model PermissionRole {
+  permissionId Int
+  roleId       Int
+
+  permission Permission @relation(fields: [permissionId], references: [id])
+  role       Role       @relation(fields: [roleId], references: [id])
+
+  @@id([permissionId, roleId])
+}
+
+model VerifyOtpCode {
+  id        Int                  @id @default(autoincrement())
+  email     String
+  code      String
+  type      VerificationCodeType
+  expiresAt DateTime
+  createdAt DateTime             @default(now())
+
+  @@index([email, code, type])
+  @@index([expiresAt])
+}
+
+model RefreshToken {
+  token     String   @id
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+model Movie {
+  id              Int      @id @default(autoincrement())
+  title           String
+  description     String
+  durationMinutes Int
+  genre           String
+  releaseDate     DateTime
+  posterUrl       String
+  trailerUrl      String
+  createdAt       DateTime
+  updatedAt       DateTime
+
+  schedules  Schedule[]
+  comments   Comment[]
+  favorites  Favorite[]
+  categories MovieCategory[]
+}
+
+model Category {
+  id     Int             @id @default(autoincrement())
+  name   String          @unique
+  movies MovieCategory[]
+}
+
+model MovieCategory {
+  movieId    Int
+  categoryId Int
+  movie      Movie    @relation(fields: [movieId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@id([movieId, categoryId])
+}
+
+model Cinema {
+  id         Int      @id @default(autoincrement())
+  name       String
+  location   String
+  totalRooms Int
+  createdAt  DateTime
+
+  rooms Room[]
+}
+
+model Room {
+  id         Int      @id @default(autoincrement())
+  cinemaId   Int
+  name       String
+  totalSeats Int
+  seatLayout Json
+  createdAt  DateTime
+
+  cinema    Cinema     @relation(fields: [cinemaId], references: [id])
+  schedules Schedule[]
+}
+
+model Schedule {
+  id        Int      @id @default(autoincrement())
+  movieId   Int
+  roomId    Int
+  startTime DateTime
+  endTime   DateTime
+  price     Decimal
+  createdAt DateTime
+
+  movie   Movie    @relation(fields: [movieId], references: [id])
+  room    Room     @relation(fields: [roomId], references: [id])
+  tickets Ticket[]
+}
+
+model Ticket {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  scheduleId Int
+  seatCode   String
+  price      Decimal
+  status     String
+  bookedAt   DateTime
+
+  user           User            @relation(fields: [userId], references: [id])
+  schedule       Schedule        @relation(fields: [scheduleId], references: [id])
+  bookingTickets BookingTicket[]
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  method    String
+  amount    Decimal
+  status    String
+  paidAt    DateTime
+  createdAt DateTime
+
+  user     User      @relation(fields: [userId], references: [id])
+  bookings Booking[]
+}
+
+model Booking {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  totalPrice Decimal
+  status     String
+  paymentId  Int
+  createdAt  DateTime
+
+  user           User            @relation(fields: [userId], references: [id])
+  payment        Payment         @relation(fields: [paymentId], references: [id])
+  bookingTickets BookingTicket[]
+}
+
+model BookingTicket {
+  id        Int @id @default(autoincrement())
+  bookingId Int
+  ticketId  Int
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  ticket  Ticket  @relation(fields: [ticketId], references: [id])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  movieId   Int
+  content   String
+  rating    Int
+  createdAt DateTime
+  updatedAt DateTime
+
+  user  User  @relation(fields: [userId], references: [id])
+  movie Movie @relation(fields: [movieId], references: [id])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  content   String
+  isRead    Boolean
+  type      String
+  createdAt DateTime
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Favorite {
+  id      Int      @id @default(autoincrement())
+  userId  Int
+  movieId Int
+  addedAt DateTime
+
+  user  User  @relation(fields: [userId], references: [id])
+  movie Movie @relation(fields: [movieId], references: [id])
+
+  @@unique([userId, movieId])
+}
