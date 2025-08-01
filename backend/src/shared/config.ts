@@ -37,6 +37,12 @@ class ConfigSchema {
 
   @IsString()
   ADMIN_NAME: string
+
+  @IsString()
+  OTP_EXPIRES_IN: string
+
+  @IsString()
+  RESEND_API_KEY: string
 }
 const configServer = plainToInstance(ConfigSchema, process.env, {
   enableImplicitConversion: true,
