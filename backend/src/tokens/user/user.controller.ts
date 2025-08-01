@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { UserService } from './user.service';
-import { SendOtpBodyDTO } from './user.dto';
+import { ForgotPasswordBodyDTO, ForgotPasswordResDTO, SendOtpBodyDTO } from './user.dto';
 
 @Controller('user')
 export class UserController {
@@ -9,5 +9,10 @@ export class UserController {
   @Post('send-otp')
   sendOTP(@Body() body: SendOtpBodyDTO) {
     return this.userService.sendOTP(body)
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: ForgotPasswordBodyDTO) {
+    return new ForgotPasswordResDTO(await this.userService.forgotPassword(body))
   }
 }
