@@ -4,15 +4,17 @@ import { UserDto } from '../../shared/models/user.model';
 import { VerifyOtpCodeDTO } from './user.dto';
 import { VerificationCodeType } from '../../shared/constants/auth.constant';
 
+// kiểu tìm kiếm ngoài id or email còn có thể đính kèm như deleteAt:null
+type WhereUniqueUserType = { id: number; [key: string]: any } | { email: string; [key: string]: any }
 @Injectable()
 
 export class UserRepository {
   constructor(private readonly prismaService: PrismaService) { }
 
   // hàm tìm theo email or id 
-  async findUnique(uniqueObject: { email: string } | { id: number }): Promise<UserDto | null> {
+  async findUnique(where: WhereUniqueUserType): Promise<UserDto | null> {
     return this.prismaService.user.findUnique({
-      where: uniqueObject,
+      where
     })
   }
 
@@ -53,7 +55,7 @@ export class UserRepository {
   }
 
   //--------------------phần quên mật khẩu----------------
-  updateUser(where: { id: number } | { email: string }, data: Partial<Omit<UserDto, 'id'>>): Promise<UserDto> {
+  updateUser(where: WhereUniqueUserType, data: Partial<UserDto>): Promise<UserDto> {
     return this.prismaService.user.update({
       where,
       data,

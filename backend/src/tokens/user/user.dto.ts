@@ -1,5 +1,5 @@
-import { IsEmail, IsString, IsDate, Length, IsIn, IsNumber, IsNotEmpty, Matches } from 'class-validator'
-import { Type } from 'class-transformer'
+import { IsEmail, IsString, IsDate, Length, IsIn, IsNumber, IsNotEmpty, Matches, IsOptional, IsUrl } from 'class-validator'
+import { Exclude, Type } from 'class-transformer'
 import { VerificationCode, VerificationCodeType } from '../../shared/constants/auth.constant'
 import { Match } from '../../shared/decorators/custom-validation.decorator'
 
@@ -57,6 +57,62 @@ export class ForgotPasswordBodyDTO {
 export class ForgotPasswordResDTO {
   message: string
   constructor(partial: Partial<ForgotPasswordResDTO>) {
+    Object.assign(this, partial)
+  }
+}
+
+export class UpdateMeBodyDTO {
+  @IsOptional()
+  @IsString()
+  name?: string
+
+  @IsOptional()
+  @Matches(/^(0|\+84)[0-9]{9,10}$/, { message: 'Số điện thoại không hợp lệ' })
+  @IsString()
+  phoneNumber?: string 
+
+  @IsOptional()
+  @IsUrl({}, { message: 'Avatar phải là đường dẫn hợp lệ' })
+  avatar?: string
+}
+
+//kiểu đầu ra của thay đổi thông tin cá nhân
+export class UpdateMeResDTO {
+  id: number
+  email: string
+  name: string
+  phoneNumber?: string | null
+  avatar?: string | null
+  roleId: number;
+  @Exclude() password: string
+  createdAt: Date
+  updatedAt: Date
+
+  constructor(partial: Partial<UpdateMeResDTO>) {
+    Object.assign(this, partial)
+  }
+}
+
+export class ChangePasswordBodyDTO {
+  @IsString()
+  @IsNotEmpty()
+  password: string
+
+  @IsString()
+  @IsNotEmpty()
+  @Length(6, 20, { message: 'Mật khẩu phải từ 6 đến 20 kí tự' })
+  newPassword: string
+
+  @IsString()
+  @IsNotEmpty()
+  @Match('newPassword', { message: 'Mật khẩu thay đổi và xác nhận mật khẩu không khớp nhau!' })
+  confirmNewPassword: string
+}
+
+export class ChangePasswordResDTO {
+  message: string
+
+  constructor(partial: Partial<ChangePasswordResDTO>) {
     Object.assign(this, partial)
   }
 }
