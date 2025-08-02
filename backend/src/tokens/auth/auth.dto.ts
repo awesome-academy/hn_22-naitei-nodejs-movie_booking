@@ -11,16 +11,16 @@ export class LoginBodyDTO {
   @IsString()
   @IsNotEmpty()
   @Length(6, 20, { message: 'Mật khẩu phải từ 6 đến 20 kí tự' })
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[\d\W]).+$/, {
-    message: 'Password must contain at least 1 uppercase letter, 1 lowercase letter, and 1 number or special character',
-  })
   password: string
 }
 
 export class LoginResDTO {
   accessToken: string
   refreshToken: string
-
+  user: {
+    name: string
+    email: string
+  }
   constructor(partial: Partial<LoginResDTO>) {
     Object.assign(this, partial)
   }

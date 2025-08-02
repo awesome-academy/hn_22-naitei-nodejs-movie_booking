@@ -6,7 +6,7 @@ interface OTPEmailProps {
   title: string
 }
 
-const logoUrl = 'https://eric.edu.vn/public/upload/2024/12/avatar-naruto-04.webp'
+const logoUrl = 'https://res.cloudinary.com/dlkqayd7j/image/upload/v1754211094/nuw3nlxrunrctzevpxhh.webp'
 
 export const OTPEmail = ({ otpCode, title }: OTPEmailProps) => (
   <Html>
