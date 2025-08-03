@@ -16,7 +16,7 @@ export class AuthService {
     private readonly rolesService: RolesService,
     private readonly tokenService: TokenService,
     private readonly authRepository: AuthRepository,
-  ) {}
+  ) { }
 
   async register(body: RegisterBodyDTO) {
     try {
@@ -47,7 +47,7 @@ export class AuthService {
     if (!user) {
       throw new UnprocessableEntityException([
         {
-          message: 'This email address does not exist',
+          message: 'Email không tồn tại',
           path: 'email',
         },
       ])
@@ -68,15 +68,7 @@ export class AuthService {
       roleId: user.roleId,
       roleName: user.role.name,
     })
-    return {
-      ...tokens,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role.name,
-      },
-    }
+    return tokens
   }
 
   // hàm tạo accessToken và refreshToken
@@ -85,8 +77,9 @@ export class AuthService {
       this.tokenService.signAccessToken({
         userId,
         roleId,
-        roleName,
-      }),
+        roleName
+      }
+      ),
       this.tokenService.signRefreshToken({ userId }),
     ])
     const decodedRefreshToken = await this.tokenService.verifyRefreshToken(refreshToken)
@@ -98,7 +91,7 @@ export class AuthService {
     return { accessToken, refreshToken }
   }
 
-  async logout(refreshToken: string) {
+   async logout(refreshToken: string) {
     try {
       // 1. Kiểm tra refreshToken có hợp lệ không
       await this.tokenService.verifyRefreshToken(refreshToken)

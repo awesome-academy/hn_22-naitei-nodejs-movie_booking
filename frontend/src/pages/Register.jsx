@@ -28,7 +28,6 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    // FE kiểm tra xác nhận mật khẩu
     if (formData.password !== formData.confirmPassword) {
       setFieldErrors({
         confirmPassword: "Passwords do not match",
@@ -42,6 +41,7 @@ const Register = () => {
         name: formData.name,
         email: formData.email,
         password: formData.password,
+        confirmPassword: formData.password,
       });
 
       // 👉 Đăng ký thành công → chuyển về trang login
@@ -167,11 +167,6 @@ const Register = () => {
               onChange={handleChange}
               required
             />
-            {fieldErrors.confirmPassword && (
-              <p className="text-red-500 text-sm mt-1">
-                {fieldErrors.confirmPassword}
-              </p>
-            )}
           </div>
 
           {/* Submit button */}

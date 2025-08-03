@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, Length, Matches, MinLength } from 'class-validator'
+import { IsEmail, IsNotEmpty, IsString, Length, Matches } from 'class-validator'
+import { Match } from '../../shared/decorators/custom-validation.decorator'
 import { Exclude } from 'class-transformer'
 
 export class LoginBodyDTO {
@@ -10,40 +11,27 @@ export class LoginBodyDTO {
   @IsString()
   @IsNotEmpty()
   @Length(6, 20, { message: 'Mật khẩu phải từ 6 đến 20 kí tự' })
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[\d\W]).+$/, {
-    message: 'Password must contain at least 1 uppercase letter, 1 lowercase letter, and 1 number or special character',
-  })
   password: string
 }
 
 export class LoginResDTO {
   accessToken: string
   refreshToken: string
-  user: {
-    id: number
-    name: string
-    email: string
-    role: string
-  }
 
   constructor(partial: Partial<LoginResDTO>) {
     Object.assign(this, partial)
   }
 }
 
-export class RegisterBodyDTO {
-  @IsEmail({}, { message: 'Email không hợp lệ' })
-  email: string
-
-  @IsString()
-  @IsNotEmpty({ message: 'Tên không được để trống' })
+export class RegisterBodyDTO extends LoginBodyDTO {
+  @IsString({ message: 'Tên phải là chuỗi' })
+  @IsNotEmpty()
   name: string
 
-  @Length(6, 20, { message: 'Mật khẩu phải từ 6 đến 20 kí tự' })
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[\d\W]).+$/, {
-    message: 'Password must contain at least 1 uppercase letter, 1 lowercase letter, and 1 number or special character',
-  })
-  password: string
+  @IsString()
+  @IsNotEmpty()
+  @Match('password', { message: 'Mật khẩu và xác nhận mật khẩu không khớp nhau!' })
+  confirmPassword: string
 }
 
 export class RegisterResDTO {
