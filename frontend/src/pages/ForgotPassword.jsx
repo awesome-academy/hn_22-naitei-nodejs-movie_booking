@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ForgotPassword = () => {
+  const navigate = useNavigate();
+
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -29,7 +32,14 @@ const ForgotPassword = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#09090b] px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
+      <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md relative">
+        <button
+          onClick={() => navigate("/")}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-xl font-bold"
+        >
+          ✕
+        </button>
+
         <h2 className="text-gray-900 font-bold mb-6 text-center text-2xl">
           Forgot Password
         </h2>

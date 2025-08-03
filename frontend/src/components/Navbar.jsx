@@ -1,36 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { MenuIcon, SearchIcon, XIcon, User, LogOut } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navigate = useNavigate();
-
-  // Kiểm tra trạng thái đăng nhập khi component mount
-  useEffect(() => {
-    const loginStatus = localStorage.getItem("isLoggedIn");
-    setIsLoggedIn(loginStatus === "true");
-  }, []);
-
-  // Lắng nghe sự thay đổi của localStorage
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const loginStatus = localStorage.getItem("isLoggedIn");
-      setIsLoggedIn(loginStatus === "true");
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+  const { auth, logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    setIsLoggedIn(false);
+    logout();
     setUserMenuOpen(false);
-    navigate("/");
+    navigate("/login");
   };
 
   return (
@@ -39,7 +22,7 @@ const Navbar = () => {
         justify-between px-6 md:px-16 lg:px-36 py-5"
     >
       <Link to="/" className="max-md:flex-1">
-        <img src={assets.logo} alt="" className="w-36 h-auto" />
+        <img src={assets.logo} alt="Logo" className="w-36 h-auto" />
       </Link>
 
       <div
@@ -56,53 +39,27 @@ const Navbar = () => {
           onClick={() => setIsOpen(!isOpen)}
         />
 
-        <Link
-          onClick={() => {
-            scrollTo(0, 0), setIsOpen(false);
-          }}
-          to="/"
-        >
+        <Link to="/" onClick={() => setIsOpen(false)}>
           Home
         </Link>
-        <Link
-          onClick={() => {
-            scrollTo(0, 0), setIsOpen(false);
-          }}
-          to="/movies"
-        >
+        <Link to="/movies" onClick={() => setIsOpen(false)}>
           Movies
         </Link>
-        <Link
-          onClick={() => {
-            scrollTo(0, 0), setIsOpen(false);
-          }}
-          to="/"
-        >
+        <Link to="/theaters" onClick={() => setIsOpen(false)}>
           Theaters
         </Link>
-        <Link
-          onClick={() => {
-            scrollTo(0, 0), setIsOpen(false);
-          }}
-          to="/"
-        >
+        <Link to="/releases" onClick={() => setIsOpen(false)}>
           Releases
         </Link>
-        <Link
-          onClick={() => {
-            scrollTo(0, 0), setIsOpen(false);
-          }}
-          to="/favorites"
-        >
+        <Link to="/favorites" onClick={() => setIsOpen(false)}>
           Favorites
         </Link>
       </div>
 
       <div className="flex items-center gap-8">
-        <SearchIcon className="max-md:hidden w-6 h-6 cursor pointer" />
+        <SearchIcon className="max-md:hidden w-6 h-6 cursor-pointer" />
 
-        {isLoggedIn ? (
-          // Hiển thị tài khoản người dùng khi đã đăng nhập
+        {auth.isLoggedIn ? (
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -110,15 +67,16 @@ const Navbar = () => {
                 transition rounded-full font-medium cursor-pointer text-white"
             >
               <User className="w-4 h-4" />
-              <span>My Account</span>
+              <span>{auth.user?.name || "My Account"}</span>
             </button>
 
-            {/* Dropdown menu */}
             {userMenuOpen && (
               <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
                 <div className="px-4 py-2 border-b border-gray-200">
                   <p className="text-sm font-medium text-gray-900">Welcome!</p>
-                  <p className="text-xs text-gray-500">user@example.com</p>
+                  <p className="text-xs text-gray-500">
+                    {auth.user?.email || "user@example.com"}
+                  </p>
                 </div>
                 <Link
                   to="/my-bookings"
@@ -145,12 +103,11 @@ const Navbar = () => {
             )}
           </div>
         ) : (
-          // Hiển thị nút Login khi chưa đăng nhập
           <button
             onClick={() => navigate("/login")}
             className="px-4 py-1 sm:px-7 sm:py-2 bg-primary
               hover:bg-primary-dull transition rounded-full font-medium
-              cursor-pointer"
+              cursor-pointer text-white"
           >
             Login
           </button>
