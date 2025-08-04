@@ -68,7 +68,13 @@ export class AuthService {
       roleId: user.roleId,
       roleName: user.role.name,
     })
-    return tokens
+    return {
+      ...tokens,
+      user: {
+        name: user.name,
+        email: user.email,
+      },
+    }
   }
 
   // hàm tạo accessToken và refreshToken
