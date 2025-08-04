@@ -17,7 +17,10 @@ export class LoginBodyDTO {
 export class LoginResDTO {
   accessToken: string
   refreshToken: string
-
+  user: {
+    name: string
+    email: string
+  }
   constructor(partial: Partial<LoginResDTO>) {
     Object.assign(this, partial)
   }
