@@ -1,4 +1,4 @@
-import 'reflect-metadata';
+import 'reflect-metadata'
 import envConfig from 'src/shared/config'
 import { HashingService } from 'src/shared/services/hashing.service'
 import { PrismaService } from 'src/shared/services/prisma.service'
@@ -20,7 +20,28 @@ const main = async () => {
       {
         name: RoleName.Client,
         description: 'Client role',
-      }
+      },
+    ],
+  })
+
+  // Create default categories
+  const categoryCount = await prisma.category.count()
+  if (categoryCount > 0) {
+    throw new Error('Categories already exist')
+  }
+
+  const categories = await prisma.category.createMany({
+    data: [
+      { name: 'Action' },
+      { name: 'Comedy' },
+      { name: 'Drama' },
+      { name: 'Horror' },
+      { name: 'Romance' },
+      { name: 'Science Fiction' },
+      { name: 'Thriller' },
+      { name: 'Documentary' },
+      { name: 'Animation' },
+      { name: 'Adventure' },
     ],
   })
 
@@ -40,13 +61,15 @@ const main = async () => {
   })
   return {
     createdRoleCount: roles.count,
+    createdCategoryCount: categories.count,
     adminUser,
   }
 }
 
 main()
-  .then(({ adminUser, createdRoleCount }) => {
+  .then(({ adminUser, createdRoleCount, createdCategoryCount }) => {
     console.log(`Created ${createdRoleCount} roles`)
+    console.log(`Created ${createdCategoryCount} categories`)
     console.log(`Created admin user: ${adminUser.email}`)
   })
   .catch(console.error)
