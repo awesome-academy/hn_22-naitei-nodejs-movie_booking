@@ -1,11 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import api from "../lib/api";
-import { useAuth } from "../contexts/AuthContext";
 
 const Register = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -44,14 +42,12 @@ const Register = () => {
         confirmPassword: formData.password,
       });
 
-      // 👉 Đăng ký thành công → chuyển về trang login
       navigate("/login");
     } catch (err) {
       const errorData = err.response?.data;
       const msg = errorData?.message;
       const fieldErrs = {};
 
-      // Xử lý lỗi từng field
       if (Array.isArray(msg)) {
         for (const entry of msg) {
           const field = entry.field || entry.path;
@@ -92,7 +88,6 @@ const Register = () => {
         )}
 
         <form onSubmit={handleRegister} className="space-y-4">
-          {/* Name */}
           <div>
             <label className="block text-gray-700 mb-1">Username</label>
             <input
@@ -111,7 +106,6 @@ const Register = () => {
             )}
           </div>
 
-          {/* Email */}
           <div>
             <label className="block text-gray-700 mb-1">Email address</label>
             <input
@@ -130,7 +124,6 @@ const Register = () => {
             )}
           </div>
 
-          {/* Password */}
           <div>
             <label className="block text-gray-700 mb-1">Password</label>
             <input
@@ -151,7 +144,6 @@ const Register = () => {
             )}
           </div>
 
-          {/* Confirm Password */}
           <div>
             <label className="block text-gray-700 mb-1">Confirm Password</label>
             <input
@@ -169,7 +161,6 @@ const Register = () => {
             />
           </div>
 
-          {/* Submit button */}
           <button
             type="submit"
             disabled={loading}
