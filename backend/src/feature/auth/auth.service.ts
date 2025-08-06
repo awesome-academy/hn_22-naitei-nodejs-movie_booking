@@ -16,7 +16,7 @@ export class AuthService {
     private readonly rolesService: RolesService,
     private readonly tokenService: TokenService,
     private readonly authRepository: AuthRepository,
-  ) { }
+  ) {}
 
   async register(body: RegisterBodyDTO) {
     try {
@@ -83,9 +83,8 @@ export class AuthService {
       this.tokenService.signAccessToken({
         userId,
         roleId,
-        roleName
-      }
-      ),
+        roleName,
+      }),
       this.tokenService.signRefreshToken({ userId }),
     ])
     const decodedRefreshToken = await this.tokenService.verifyRefreshToken(refreshToken)
@@ -97,7 +96,7 @@ export class AuthService {
     return { accessToken, refreshToken }
   }
 
-   async logout(refreshToken: string) {
+  async logout(refreshToken: string) {
     try {
       // 1. Kiểm tra refreshToken có hợp lệ không
       await this.tokenService.verifyRefreshToken(refreshToken)

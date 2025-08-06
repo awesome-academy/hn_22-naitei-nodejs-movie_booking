@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import api from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
+import { toast, Toaster } from "react-hot-toast";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ const Login = () => {
 
       // Cập nhật AuthContext
       login({ user, accessToken, refreshToken });
+      toast.success("Đăng nhập thành công!");
 
       navigate("/");
     } catch (err) {
@@ -68,6 +70,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center background-color">
+      <Toaster position="top-center" />
       <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md relative">
         <button
           onClick={() => navigate("/")}
