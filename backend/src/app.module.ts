@@ -7,9 +7,10 @@ import { AuthModule } from './feature/auth/auth.module'
 import { UserModule } from './feature/user/user.module'
 import { MovieModule } from './feature/movie/module/movie.module'
 import { CinemaModule } from './feature/cinema/module/cinema.module'
+import { PermissionModule } from './feature/permission/permission.module'
 
 @Module({
-  imports: [SharedModule, AuthModule, UserModule, MovieModule, CinemaModule],
+  imports: [SharedModule, AuthModule, UserModule, MovieModule, CinemaModule,PermissionModule],
   controllers: [AppController],
   providers: [
     AppService,
