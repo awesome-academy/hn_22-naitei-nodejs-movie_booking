@@ -13,4 +13,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+export const permissionAPI = {
+  getAll: (params = {}) => api.get('/permissions', { params }),
+  getById: (id) => api.get(`/permissions/${id}`),
+  create: (data) => api.post('/permissions', data),
+  update: (id, data) => api.put(`/permissions/${id}`, data),
+  delete: (id) => api.delete(`/permissions/${id}`),
+};
+
 export default api;
