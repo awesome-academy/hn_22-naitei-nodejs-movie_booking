@@ -21,4 +21,13 @@ export const permissionAPI = {
   delete: (id) => api.delete(`/permissions/${id}`),
 };
 
+export const movieAPI = {
+  getAll: (params = {}) => api.get('/movies', { params }),
+  getById: (id) => api.get(`/movies/${id}`),
+  create: (data) => api.post('/movies', data),
+  update: (id, data) => api.put(`/movies/${id}`, data),
+  delete: (id, confirm = false) => api.delete(`/movies/${id}`, { data: { confirm } }),
+  getCategories: () => api.get('/movies/categories'),
+};
+
 export default api;
