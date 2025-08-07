@@ -40,6 +40,7 @@ const ManageMovies = () => {
     releaseDate: '',
     posterUrl: '',
     trailerUrl: '',
+    genre: '',
     categoryIds: []
   });
 
@@ -118,6 +119,7 @@ const ManageMovies = () => {
         releaseDate: '',
         posterUrl: '',
         trailerUrl: '',
+        genre: '',
         categoryIds: []
       });
     } else if (type === 'edit' && movie) {
@@ -130,6 +132,7 @@ const ManageMovies = () => {
         releaseDate: movie.releaseDate ? movie.releaseDate.split('T')[0] : '',
         posterUrl: movie.posterUrl,
         trailerUrl: movie.trailerUrl,
+        genre: movie.genre || '',
         categoryIds: categoryIds
       });
     }
@@ -148,6 +151,7 @@ const ManageMovies = () => {
       releaseDate: '',
       posterUrl: '',
       trailerUrl: '',
+      genre: '',
       categoryIds: []
     });
   };
@@ -188,24 +192,28 @@ const ManageMovies = () => {
         setLoading(false);
         return;
       }
+      if (!formData.genre?.trim()) {
+        alert('Genre is required');
+        setLoading(false);
+        return;
+      }
 
-      // Clean and validate form data
       const movieData = {
         title: formData.title.trim(),
         description: formData.description.trim(),
         durationMinutes: parseInt(formData.durationMinutes),
         releaseDate: new Date(formData.releaseDate).toISOString(), 
         posterUrl: formData.posterUrl.trim(),
+        genre: formData.genre.trim(),
       };
 
-      // For create, trailerUrl is required. For update, it's optional
+
       if (modalType === 'create') {
         movieData.trailerUrl = formData.trailerUrl.trim();
       } else if (modalType === 'edit' && formData.trailerUrl.trim()) {
         movieData.trailerUrl = formData.trailerUrl.trim();
       }
 
-      // Only add categoryIds if there are any selected
       if (formData.categoryIds.length > 0) {
         movieData.categoryIds = formData.categoryIds;
       }
@@ -224,7 +232,11 @@ const ManageMovies = () => {
       
       let errorMessage = 'Unknown error occurred';
       if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+        if (Array.isArray(error.response.data.message)) {
+          errorMessage = error.response.data.message.join(', ');
+        } else {
+          errorMessage = error.response.data.message;
+        }
       } else if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
       } else if (Array.isArray(error.response?.data)) {
@@ -555,6 +567,21 @@ const ManageMovies = () => {
                       placeholder="Enter movie description"
                       required
                       rows={3}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Genre *
+                    </label>
+                    <input
+                      type="text"
+                      name="genre"
+                      value={formData.genre}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Action, Comedy, Drama"
+                      required
                       className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
