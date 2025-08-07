@@ -9,6 +9,8 @@ const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { auth, logout } = useAuth();
+  const defaultAvatar =
+    "https://cdn2.fptshop.com.vn/small/avatar_trang_1_cd729c335b.jpg";
 
   const handleLogout = () => {
     logout();
@@ -63,11 +65,13 @@ const Navbar = () => {
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dull
-                transition rounded-full font-medium cursor-pointer text-white"
+              className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-white hover:ring-2 ring-primary transition"
             >
-              <User className="w-4 h-4" />
-              <span>{auth.user?.name || "My Account"}</span>
+              <img
+                src={auth.user?.avatar || defaultAvatar}
+                alt="avatar"
+                className="w-full h-full object-cover"
+              />
             </button>
 
             {userMenuOpen && (
@@ -78,6 +82,13 @@ const Navbar = () => {
                     {auth.user?.email || "user@example.com"}
                   </p>
                 </div>
+                <Link
+                  to="/profile"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => setUserMenuOpen(false)}
+                >
+                  Manage Account
+                </Link>
                 <Link
                   to="/my-bookings"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
