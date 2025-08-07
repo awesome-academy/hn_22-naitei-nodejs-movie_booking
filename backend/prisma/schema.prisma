@@ -184,12 +184,13 @@ model Schedule {
   roomId    Int
   startTime DateTime
   endTime   DateTime
-  price     Decimal
   createdAt DateTime
 
   movie   Movie    @relation(fields: [movieId], references: [id])
   room    Room     @relation(fields: [roomId], references: [id])
   tickets Ticket[]
+
+  @@unique([movieId, roomId, startTime])
 }
 
 model Ticket {
@@ -204,6 +205,8 @@ model Ticket {
   user           User            @relation(fields: [userId], references: [id])
   schedule       Schedule        @relation(fields: [scheduleId], references: [id])
   bookingTickets BookingTicket[]
+
+  @@unique([scheduleId, seatCode])
 }
 
 model Payment {
