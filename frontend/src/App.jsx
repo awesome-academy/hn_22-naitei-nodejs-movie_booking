@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import AdminLayout from "./pages/admin/Layout";
 import Dashboard from "./pages/admin/Dashboard";
 import ManagePermissions from "./pages/admin/ManagePermissions";
+import ManageMovies from "./pages/admin/ManageMovies";
 
 const App = () => {
   const isAdminRoute = useLocation().pathname.startsWith("/admin");
@@ -38,6 +39,7 @@ const App = () => {
           <Route path="/favorite" element={<Favorite />} />
           <Route path="/admin/*" element={<AdminLayout />} >
             <Route index element={<Dashboard />} />
+            <Route path="manage-movies" element={<ManageMovies />} />
             <Route path="manage-permissions" element={<ManagePermissions />} />
           </Route>
         </Routes>
