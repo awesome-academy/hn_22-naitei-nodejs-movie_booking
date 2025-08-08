@@ -9,9 +9,21 @@ import { MovieModule } from './feature/movie/module/movie.module'
 import { CinemaModule } from './feature/cinema/module/cinema.module'
 import { PermissionModule } from './feature/permission/permission.module'
 import { ScheduleModule } from './feature/schedule/module/schedule.module'
+import { TicketModule } from './feature/ticket/module/ticket.module'
+import { PaymentModule } from './feature/payment/module/payment.module'
 
 @Module({
-  imports: [SharedModule, AuthModule, UserModule, MovieModule, CinemaModule, PermissionModule, ScheduleModule],
+  imports: [
+    SharedModule,
+    AuthModule,
+    UserModule,
+    MovieModule,
+    CinemaModule,
+    PermissionModule,
+    ScheduleModule,
+    TicketModule,
+    PaymentModule,
+  ],
   controllers: [AppController],
   providers: [
     AppService,
