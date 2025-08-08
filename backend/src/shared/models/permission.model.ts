@@ -17,7 +17,10 @@ export class PermissionDTO {
   @IsString()
   path: string;
 
-  @IsEnum(Object.values(HTTPMethod)) 
+  @IsString()
+  module: string;
+
+  @IsEnum(Object.values(HTTPMethod))
   method: HTTPMethodType;
 
   @Type(() => Number)
@@ -59,7 +62,10 @@ export class PermissionSummaryDTO {
   @IsString()
   path: string;
 
-  @IsEnum(Object.values(HTTPMethod)) 
+  @IsString()
+  module: string;
+
+  @IsEnum(Object.values(HTTPMethod))
   method: HTTPMethodType;
 
   constructor(data: Partial<PermissionSummaryDTO>) {

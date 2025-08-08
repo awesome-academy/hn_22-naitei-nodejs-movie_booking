@@ -53,7 +53,7 @@ model User {
 
 model Role {
   id          Int          @id @default(autoincrement())
-  name        String       @unique @db.VarChar(191)
+  name        String       @db.VarChar(191)
   description String       @default("")
   isActive    Boolean      @default(true)
   permissions Permission[]
@@ -78,6 +78,7 @@ model Permission {
   name        String     @db.VarChar(255)
   description String     @default("")
   path        String     @db.VarChar(255)
+  module      String     @default("") @db.VarChar(255)
   method      HTTPMethod
   roles       Role[]
 
