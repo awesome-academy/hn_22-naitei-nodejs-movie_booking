@@ -14,6 +14,9 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import { AuthProvider } from "./contexts/AuthContext";
 import Profile from "./pages/Profile";
+import AdminLayout from "./pages/admin/Layout";
+import Dashboard from "./pages/admin/Dashboard";
+import ManagePermissions from "./pages/admin/ManagePermissions";
 
 const App = () => {
   const isAdminRoute = useLocation().pathname.startsWith("/admin");
@@ -33,6 +36,10 @@ const App = () => {
           <Route path="/movies/:id/:date" element={<SeatLayout />} />
           <Route path="/my-bookings" element={<MyBookings />} />
           <Route path="/favorite" element={<Favorite />} />
+          <Route path="/admin/*" element={<AdminLayout />} >
+            <Route index element={<Dashboard />} />
+            <Route path="manage-permissions" element={<ManagePermissions />} />
+          </Route>
         </Routes>
         {!isAdminRoute && <Footer />}
       </AuthProvider>
