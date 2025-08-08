@@ -41,19 +41,49 @@ const Navbar = () => {
           onClick={() => setIsOpen(!isOpen)}
         />
 
-        <Link to="/" onClick={() => setIsOpen(false)}>
+        <Link
+          onClick={() => {
+            scrollTo(0, 0);
+            setIsOpen(false);
+          }}
+          to="/"
+        >
           Home
         </Link>
-        <Link to="/movies" onClick={() => setIsOpen(false)}>
+        <Link
+          onClick={() => {
+            scrollTo(0, 0);
+            setIsOpen(false);
+          }}
+          to="/movies"
+        >
           Movies
         </Link>
-        <Link to="/theaters" onClick={() => setIsOpen(false)}>
+        <Link
+          onClick={() => {
+            scrollTo(0, 0);
+            setIsOpen(false);
+          }}
+          to="/theaters"
+        >
           Theaters
         </Link>
-        <Link to="/releases" onClick={() => setIsOpen(false)}>
+        <Link
+          onClick={() => {
+            scrollTo(0, 0);
+            setIsOpen(false);
+          }}
+          to="/releases"
+        >
           Releases
         </Link>
-        <Link to="/favorites" onClick={() => setIsOpen(false)}>
+        <Link
+          onClick={() => {
+            scrollTo(0, 0);
+            setIsOpen(false);
+          }}
+          to="/favorites"
+        >
           Favorites
         </Link>
       </div>
