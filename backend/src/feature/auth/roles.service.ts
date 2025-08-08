@@ -6,18 +6,24 @@ import { PrismaService } from 'src/shared/services/prisma.service'
 export class RolesService {
   private clientRoleId: number | null = null
 
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) { }
 
   async getClientRoleId() {
     if (this.clientRoleId) {
       return this.clientRoleId
     }
-    const role = await this.prismaService.role.findUniqueOrThrow({
+    const role = await this.prismaService.role.findFirst({
       where: {
         name: RoleName.Client,
+        deletedAt: null,
       },
-    })
-    this.clientRoleId = role.id
-    return role.id
+    });
+
+    if (!role) {
+      throw new Error('Client role not found');
+    }
+
+    this.clientRoleId = role.id;
+    return role.id;
   }
 }

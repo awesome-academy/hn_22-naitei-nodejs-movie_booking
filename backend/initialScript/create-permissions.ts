@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from 'src/app.module'
-import { HTTPMethod } from 'src/shared/constants/role.constant'
+import { HTTPMethod, RoleName } from 'src/shared/constants/role.constant'
 import { PrismaService } from 'src/shared/services/prisma.service'
 
 const prisma = new PrismaService()
@@ -20,10 +20,15 @@ async function bootstrap() {
       if (layer.route) {
         const path = layer.route?.path
         const method = String(layer.route?.stack[0].method).toUpperCase() as keyof typeof HTTPMethod
+
+        //viết hoa chữ cái đầu tiên
+        const raw = path.split('/')[1] || ''
+        const moduleName = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase()
         return {
           path,
           method,
           name: method + ' ' + path,
+          module: moduleName,
         }
       }
     })
@@ -75,6 +80,31 @@ async function bootstrap() {
   } else {
     console.log('No permissions to add')
   }
+
+  // Lấy lại permissions trong database sau khi thêm mới (hoặc bị xóa) để add cho role admin
+  const updatedPermissionsInDb = await prisma.permission.findMany({
+    where: {
+      deletedAt: null,
+    },
+  })
+  // Cập nhật lại các permissions trong Admin Role
+  const adminRole = await prisma.role.findFirstOrThrow({
+    where: {
+      name: RoleName.Admin,
+      deletedAt: null,
+    },
+  })
+  await prisma.role.update({
+    where: {
+      id: adminRole.id,
+    },
+    data: {
+      permissions: {
+        set: updatedPermissionsInDb.map((item) => ({ id: item.id })),
+      },
+    },
+  })
+
   process.exit(0)
 }
 bootstrap()

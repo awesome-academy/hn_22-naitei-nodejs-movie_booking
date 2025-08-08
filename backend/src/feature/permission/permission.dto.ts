@@ -60,6 +60,9 @@ export class CreatePermissionBodyDto {
   @IsString()
   path: string;
 
+  @IsString()
+  module: string;
+
   @IsEnum(Object.values(HTTPMethod))
   method: HTTPMethodType;
 }
