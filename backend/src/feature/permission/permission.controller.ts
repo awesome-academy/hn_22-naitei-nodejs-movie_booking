@@ -12,6 +12,7 @@ export class PermissionController {
   ) { }
 
   @Get()
+  @UseGuards(AccessTokenGuard)
   async list(@Query() query: GetPermissionsQueryBodyDTO) {
     return new GetPermissionsResDTO(await this.permissionService.list({
       page: query.page,
@@ -21,6 +22,7 @@ export class PermissionController {
   }
 
   @Get(':permissionId')
+  @UseGuards(AccessTokenGuard)
   async findById(@Param() params: GetPermissionParamsBodyDTO): Promise<PermissionDTO> {
     const permission = await this.permissionService.findById(params.permissionId);
     return new PermissionDTO(permission);
