@@ -14,6 +14,7 @@ import {
   ExternalLinkIcon
 } from 'lucide-react';
 import { movieAPI } from '../../lib/api';
+import { toast } from 'react-toastify';
 
 const ManageMovies = () => {
   const [movies, setMovies] = useState([]);
@@ -163,37 +164,37 @@ const ManageMovies = () => {
     try {
       // Validate required fields
       if (!formData.title?.trim()) {
-        alert('Movie title is required');
+        toast.error('Movie title is required');
         setLoading(false);
         return;
       }
       if (!formData.description?.trim()) {
-        alert('Movie description is required');
+        toast.error('Movie description is required');
         setLoading(false);
         return;
       }
       if (!formData.durationMinutes || parseInt(formData.durationMinutes) <= 0) {
-        alert('Valid duration is required');
+        toast.error('Valid duration is required');
         setLoading(false);
         return;
       }
       if (!formData.releaseDate) {
-        alert('Release date is required');
+        toast.error('Release date is required');
         setLoading(false);
         return;
       }
       if (!formData.posterUrl?.trim()) {
-        alert('Poster URL is required');
+        toast.error('Poster URL is required');
         setLoading(false);
         return;
       }
       if (modalType === 'create' && !formData.trailerUrl?.trim()) {
-        alert('Trailer URL is required');
+        toast.error('Trailer URL is required');
         setLoading(false);
         return;
       }
       if (!formData.genre?.trim()) {
-        alert('Genre is required');
+        toast.error('Genre is required');
         setLoading(false);
         return;
       }
@@ -226,7 +227,7 @@ const ManageMovies = () => {
       
       await fetchMovies();
       closeModal();
-      alert(`Movie ${modalType === 'create' ? 'created' : 'updated'} successfully!`);
+      toast.success(`Movie ${modalType === 'create' ? 'created' : 'updated'} successfully!`);
     } catch (error) {
       console.error(`Error ${modalType}ing movie:`, error);
       
@@ -247,7 +248,7 @@ const ManageMovies = () => {
         errorMessage = error.message;
       }
       
-      alert(`Error ${modalType}ing movie: ${errorMessage}`);
+      toast.error(`Error ${modalType}ing movie: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -262,7 +263,7 @@ const ManageMovies = () => {
       setShowModal(true);
     } catch (error) {
       console.error('Error checking delete:', error);
-      alert('Error checking movie deletion');
+      toast.error('Error checking movie deletion');
     }
   };
 
@@ -285,10 +286,10 @@ const ManageMovies = () => {
       }
       
       closeModal();
-      alert('Movie deleted successfully!');
+      toast.success('Movie deleted successfully!');
     } catch (error) {
       console.error('Error deleting movie:', error);
-      alert('Error deleting movie');
+      toast.error('Error deleting movie');
     } finally {
       setLoading(false);
     }

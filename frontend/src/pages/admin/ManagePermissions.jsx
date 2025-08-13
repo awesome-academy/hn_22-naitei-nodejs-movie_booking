@@ -11,6 +11,7 @@ import {
   SaveIcon
 } from 'lucide-react';
 import { permissionAPI } from '../../lib/api';
+import { toast } from 'react-toastify';
 
 const ManagePermissions = () => {
   const [permissions, setPermissions] = useState([]);
@@ -111,10 +112,10 @@ const ManagePermissions = () => {
       
       await fetchPermissions();
       closeModal();
-      alert(`Permission ${modalType === 'create' ? 'created' : 'updated'} successfully!`);
+      toast.success(`Permission ${modalType === 'create' ? 'created' : 'updated'} successfully!`);
     } catch (error) {
       console.error(`Error ${modalType}ing permission:`, error);
-      alert(`Error ${modalType}ing permission`);
+      toast.error(`Error ${modalType}ing permission`);
     } finally {
       setLoading(false);
     }
@@ -140,10 +141,10 @@ const ManagePermissions = () => {
       }
       
       closeModal();
-      alert('Permission deleted successfully!');
+      toast.success('Permission deleted successfully!');
     } catch (error) {
       console.error('Error deleting permission:', error);
-      alert('Error deleting permission');
+      toast.error('Error deleting permission');
     } finally {
       setLoading(false);
     }
