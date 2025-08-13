@@ -30,4 +30,12 @@ export const movieAPI = {
   getCategories: () => api.get('/movies/categories'),
 };
 
+export const cinemaAPI = {
+  getAll: (params = {}) => api.get('/cinemas', { params }),
+  getById: (id) => api.get(`/cinemas/${id}`),
+  create: (data) => api.post('/cinemas', data),
+  update: (id, data) => api.put(`/cinemas/${id}`, data),
+  delete: (id) => api.delete(`/cinemas/${id}`),
+};
+
 export default api;
