@@ -1,38 +1,71 @@
-import { Body, Controller, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { CreateUserBodyDTO, CreateUserResDTO, DeleteResDTO, GetUserParamsBodyDTO, GetUserResDTO, GetUsersQueryBodyDTO, GetUsersResDTO, UpdateUserBodyDTO, UpdateUserResDTO } from './user.dto';
 import { UserService } from './user.service';
-import { ChangePasswordBodyDTO, ChangePasswordResDTO, ForgotPasswordBodyDTO, ForgotPasswordResDTO, SendOtpBodyDTO, UpdateMeBodyDTO, UpdateMeResDTO } from './user.dto';
 import { ActiveUser } from '../../shared/decorators/active-user.decorator';
+import { ActiveRolePermissions } from '../../shared/decorators/active-role-permission.decorator';
 import { AccessTokenGuard } from '../../shared/guards/access-token.guard';
 
-@Controller('user')
+@Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
-  @Post('send-otp')
-  sendOTP(@Body() body: SendOtpBodyDTO) {
-    return this.userService.sendOTP(body)
+  @Get()
+  async list(@Query() query: GetUsersQueryBodyDTO) {
+    return new GetUsersResDTO(await this.userService.list({
+      page: query.page,
+      limit: query.limit,
+    })
+    )
   }
 
-  @Post('forgot-password')
-  async forgotPassword(@Body() body: ForgotPasswordBodyDTO) {
-    return new ForgotPasswordResDTO(await this.userService.forgotPassword(body))
+  @Get(':userId')
+  async findById(@Param() params: GetUserParamsBodyDTO) {
+    return new GetUserResDTO(await this.userService.findById(params.userId))
   }
 
+  @Post()
   @UseGuards(AccessTokenGuard)
-  @Put('update-profile')
-  async updateProfile(@Body() body: UpdateMeBodyDTO, @ActiveUser('userId') userId: number) {
-    return new UpdateMeResDTO(await this.userService.updateProfile({
-      userId,
-      body
-    }))
+  async create(
+    @Body() body: CreateUserBodyDTO,
+    @ActiveUser('userId') userId: number,
+    @ActiveRolePermissions('name') roleName: string,
+  ) {
+    return new CreateUserResDTO(await this.userService.create({
+      data: body,
+      createdById: userId,
+      createdByRoleName: roleName,
+    })
+    )
   }
-  
+
+  @Put(':userId')
   @UseGuards(AccessTokenGuard)
-  @Put('change-password')
-  async changePassword(@Body() body: ChangePasswordBodyDTO, @ActiveUser('userId') userId: number) {
-    return new ChangePasswordResDTO(await this.userService.changePassword({
-      userId,
-      body,
+  async update(
+    @Body() body: UpdateUserBodyDTO,
+    @Param() params: GetUserParamsBodyDTO,
+    @ActiveUser('userId') userId: number,
+    @ActiveRolePermissions('name') roleName: string,
+  ) {
+    return new UpdateUserResDTO(await this.userService.update({
+      data: body,
+      id: params.userId,
+      updatedById: userId,
+      updatedByRoleName: roleName,
+    })
+  )
+  }
+
+  @Delete(':userId')
+  @UseGuards(AccessTokenGuard)
+  async delete(
+    @Param() params: GetUserParamsBodyDTO,
+    @ActiveUser('userId') userId: number,
+    @ActiveRolePermissions('name') roleName: string,
+  ) {
+    return new DeleteResDTO(await this.userService.delete({
+      id: params.userId,
+      deletedById: userId,
+      deletedByRoleName: roleName,
     })
     )
   }
