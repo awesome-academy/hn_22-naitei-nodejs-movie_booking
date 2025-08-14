@@ -164,4 +164,72 @@ export class MovieService {
   async getCategories() {
     return this.movieRepository.findCategories()
   }
+
+  async addFavorite(id: number, userId: number) {
+    const movie = await this.getMovieById(id)
+    if (!movie) {
+      throw new NotFoundException('Movie not found')
+    }
+
+    const favorite = await this.movieRepository.addFavorite(id, userId)
+    if (!favorite) {
+      throw new BadRequestException('Movie already favorited')
+    }
+
+    return {
+      message: 'Movie favorited successfully',
+      favorited: true,
+    }
+  }
+
+  async removeFavorite(id: number, userId: number) {
+    const movie = await this.getMovieById(id)
+    if (!movie) {
+      throw new NotFoundException('Movie not found')
+    }
+
+    const favorite = await this.movieRepository.removeFavorite(id, userId)
+    if (!favorite) {
+      throw new BadRequestException('Movie not favorited')
+    }
+
+    return {
+      message: 'Movie unfavorited successfully',
+      favorited: false,
+    }
+  }
+
+  async toggleFavorite(id: number, userId: number) {
+    const movie = await this.getMovieById(id)
+    if (!movie) {
+      throw new NotFoundException('Movie not found')
+    }
+
+    const existingFavorite = await this.movieRepository.findFavorite(id, userId)
+
+    if (existingFavorite) {
+      await this.movieRepository.removeFavorite(id, userId)
+      return {
+        message: 'Movie unfavorited successfully',
+        favorited: false,
+      }
+    } else {
+      await this.movieRepository.addFavorite(id, userId)
+      return {
+        message: 'Movie favorited successfully',
+        favorited: true,
+      }
+    }
+  }
+
+  async checkFavoriteStatus(id: number, userId: number) {
+    const favorite = await this.movieRepository.findFavorite(id, userId)
+    return {
+      favorited: !!favorite,
+    }
+  }
+
+  async getTopFavoriteMovies() {
+    return this.movieRepository.getTopFavoriteMovies(5)
+  }
 }
