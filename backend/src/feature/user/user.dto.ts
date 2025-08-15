@@ -1,83 +1,208 @@
-import { IsEmail, IsString, IsDate, Length, IsIn, IsNumber, IsNotEmpty, Matches, IsOptional, IsUrl } from 'class-validator'
-import { Exclude, Type } from 'class-transformer'
-import { VerificationCode, VerificationCodeType } from '../../shared/constants/auth.constant'
-import { Match } from '../../shared/decorators/custom-validation.decorator'
+import { Exclude, Type } from 'class-transformer';
+import { IsArray, IsEmail, IsInt, IsOptional, IsString, Max, Min, MinLength, ValidateNested } from 'class-validator';
 
-export class VerifyOtpCodeDTO {
-  @IsNumber()
-  id: number
-
-  @IsEmail()
-  email: string
+// Role DTO
+export class RoleDTO {
+  @IsInt()
+  id: number;
 
   @IsString()
-  @Length(6, 6)
-  code: string
+  name: string;
 
-  @IsIn(Object.values(VerificationCode))
-  type: VerificationCodeType
-
-  @IsDate()
-  @Type(() => Date)
-  expiresAt: Date
-
-  @IsDate()
-  @Type(() => Date)
-  createdAt: Date
-}
-
-export class SendOtpBodyDTO {
-  @IsEmail({}, { message: 'Email không hợp lệ!' })
-  email: string
-
-  @IsIn(Object.values(VerificationCode))
-  type: VerificationCodeType
-}
-
-export class ForgotPasswordBodyDTO {
-  @IsEmail({}, { message: 'Email không hợp lệ!' })
-  email: string
-
-  @IsString()
-  @IsNotEmpty({ message: 'Mã xác nhận không được để trống!' })
-  @Length(6, 6, { message: 'Mã xác nhận phải đúng 6 ký tự!' })
-  @Matches(/^\d{6}$/, { message: 'Mã xác nhận chỉ được chứa số!' })
-  code: string
-
-  @IsString()
-  @IsNotEmpty({ message: 'Mật khẩu mới không được để trống!' })
-  newPassword: string
-
-  @IsString()
-  @IsNotEmpty({ message: 'Vui lòng xác nhận mật khẩu mới!' })
-  @Match('newPassword', { message: 'Mật khẩu và xác nhận mật khẩu mới không khớp nhau!' })
-  confirmNewPassword: string
-}
-
-export class ForgotPasswordResDTO {
-  message: string
-  constructor(partial: Partial<ForgotPasswordResDTO>) {
-    Object.assign(this, partial)
+  constructor(partial: Partial<RoleDTO>) {
+    Object.assign(this, partial);
   }
 }
 
-export class UpdateMeBodyDTO {
-  @IsOptional()
+// User DTO
+export class UserDTO {
+  @IsInt()
+  id: number;
+
   @IsString()
-  name?: string
+  email: string;
+
+  @IsString()
+  name: string;
+
+  @IsInt()
+  roleId: number;
 
   @IsOptional()
-  @Matches(/^(0|\+84)[0-9]{9,10}$/, { message: 'Số điện thoại không hợp lệ' })
   @IsString()
-  phoneNumber?: string 
+  phoneNumber?: string | null;
 
   @IsOptional()
-  @IsUrl({}, { message: 'Avatar phải là đường dẫn hợp lệ' })
-  avatar?: string
+  @IsString()
+  avatar?: string | null;
+
+  @IsOptional()
+  @IsInt()
+  createdById?: number | null;
+
+  @IsOptional()
+  @IsInt()
+  updatedById?: number | null;
+
+  @IsOptional()
+  @IsInt()
+  deletedById?: number | null;
+
+  @IsOptional()
+  deletedAt?: Date | null;
+  @ValidateNested()
+  @Type(() => RoleDTO)
+  role: RoleDTO;
+
+  constructor(partial: Partial<UserDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
+// Response DTO
+export class GetUsersResDTO {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UserDTO)
+  data: UserDTO[];
+
+  @IsInt()
+  totalItems: number;
+
+  @IsInt()
+  page: number;
+
+  @IsInt()
+  limit: number;
+
+  @IsInt()
+  totalPages: number;
+
+  constructor(partial: Partial<GetUsersResDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
+export class PermissionDto {
+  @IsInt()
+  id: number;
+
+  @IsString()
+  name: string;
+
+  @IsString()
+  module: string;
+
+  @IsString()
+  path: string;
+
+  @IsString()
+  method: string;
+}
+
+export class RolePermissionDto {
+  @IsInt()
+  id: number;
+
+  @IsString()
+  name: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PermissionDto)
+  permissions: PermissionDto[];
+}
+
+export class GetUserResDTO {
+  @IsInt()
+  id: number;
+
+  @IsString()
+  email: string;
+
+  @IsString()
+  name: string;
+
+  @IsInt()
+  roleId: number;
+
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string | null;
+
+  @IsOptional()
+  @IsString()
+  avatar?: string | null;
+
+  @IsOptional()
+  @IsInt()
+  createdById?: number | null;
+
+  @IsOptional()
+  @IsInt()
+  updatedById?: number | null;
+
+  @IsOptional()
+  @IsInt()
+  deletedById?: number | null;
+
+  @ValidateNested()
+  @Type(() => RolePermissionDto)
+  role: RolePermissionDto;
+
+  constructor(partial: Partial<GetUserResDTO>) {
+    Object.assign(this, partial);
+  }
+}
+
+export class GetUsersQueryBodyDTO {
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  page: number = 1;
+
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit: number = 10;
+}
+
+export class GetUserParamsBodyDTO {
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  userId: number;
+}
+
+export class CreateUserBodyDTO {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(2)
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  avatar?: string;
+
+  @IsString()
+  @MinLength(6)
+  password: string;
+
+  @IsInt()
+  roleId: number;
 }
 
 //kiểu đầu ra của thay đổi thông tin cá nhân
-export class UpdateMeResDTO {
+export class CreateUserResDTO {
   id: number
   email: string
   name: string
@@ -88,31 +213,49 @@ export class UpdateMeResDTO {
   createdAt: Date
   updatedAt: Date
 
-  constructor(partial: Partial<UpdateMeResDTO>) {
+  constructor(partial: Partial<CreateUserResDTO>) {
     Object.assign(this, partial)
   }
 }
 
-export class ChangePasswordBodyDTO {
-  @IsString()
-  @IsNotEmpty()
-  password: string
+export class UpdateUserBodyDTO {
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @Length(6, 20, { message: 'Mật khẩu phải từ 6 đến 20 kí tự' })
-  newPassword: string
+  @MinLength(2)
+  name?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @Match('newPassword', { message: 'Mật khẩu thay đổi và xác nhận mật khẩu không khớp nhau!' })
-  confirmNewPassword: string
+  phoneNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  avatar?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  password?: string;
+
+  @IsOptional()
+  @IsInt()
+  roleId?: number;
+
+  @IsOptional()
+  @IsInt()
+  updatedById?: number;
 }
 
-export class ChangePasswordResDTO {
+export class UpdateUserResDTO extends CreateUserResDTO { }
+
+export class DeleteResDTO {
   message: string
 
-  constructor(partial: Partial<ChangePasswordResDTO>) {
-    Object.assign(this, partial)
+  constructor(partial: Partial<DeleteResDTO>) {
+    Object.assign(this, partial);
   }
 }

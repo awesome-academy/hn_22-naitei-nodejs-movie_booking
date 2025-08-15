@@ -3,24 +3,25 @@ import { Prisma } from '@prisma/client'
 import { PrismaService } from '../../shared/services/prisma.service'
 import { HashingService } from '../../shared/services/hashing.service'
 import { LoginBodyDTO, RegisterBodyDTO, RegisterResDTO } from './auth.dto'
-import { RolesService } from './roles.service'
+
 import { TokenService } from '../../shared/services/token.service'
 import { AccessTokenPayloadCreate } from '../../shared/types/jwt.type'
 import { AuthRepository } from './auth.repo'
+import { SharedRoleRepository } from '../../shared/repositories/shared-role.repo'
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly hashingService: HashingService,
     private readonly prismaService: PrismaService,
-    private readonly rolesService: RolesService,
+    private readonly sharedRoleRepository: SharedRoleRepository,
     private readonly tokenService: TokenService,
     private readonly authRepository: AuthRepository,
   ) {}
 
   async register(body: RegisterBodyDTO) {
     try {
-      const clientRoleId = await this.rolesService.getClientRoleId()
+      const clientRoleId = await this.sharedRoleRepository.getClientRoleId()
       const hashedPassword = await this.hashingService.hash(body.password)
       const user = await this.prismaService.user.create({
         data: {
