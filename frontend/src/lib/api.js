@@ -38,4 +38,20 @@ export const cinemaAPI = {
   delete: (id) => api.delete(`/cinemas/${id}`),
 };
 
+export const roomAPI = {
+  getAll: (params = {}) => api.get('/cinema/rooms', { params }),
+  getById: (id) => api.get(`/cinema/rooms/${id}`),
+  create: (data) => api.post('/cinema/rooms', data),
+  update: (id, data) => api.put(`/cinema/rooms/${id}`, data),
+  delete: (id) => api.delete(`/cinema/rooms/${id}`),
+};
+
+export const scheduleAPI = {
+  getById: (id) => api.get(`/schedules/${id}`),
+  getByMovieId: (movieId, params = {}) => api.get(`/schedules/movie/${movieId}`, { params }),
+  create: (data) => api.post('/schedules', data),
+  update: (id, data) => api.put(`/schedules/${id}`, data),
+  delete: (id) => api.delete(`/schedules/${id}`),
+};
+
 export default api;

@@ -19,6 +19,7 @@ import Dashboard from "./pages/admin/Dashboard";
 import ManagePermissions from "./pages/admin/ManagePermissions";
 import ManageMovies from "./pages/admin/ManageMovies";
 import ManageCinemas from "./pages/admin/ManageCinemas";
+import ManageSchedules from "./pages/admin/ManageSchedules";
 
 const App = () => {
   const isAdminRoute = useLocation().pathname.startsWith("/admin");
@@ -43,6 +44,7 @@ const App = () => {
             <Route path="manage-movies" element={<ManageMovies />} />
             <Route path="manage-permissions" element={<ManagePermissions />} />
             <Route path="manage-cinemas" element={<ManageCinemas />} />
+            <Route path="manage-schedules" element={<ManageSchedules />} />
           </Route>
         </Routes>
         {!isAdminRoute && <Footer />}
