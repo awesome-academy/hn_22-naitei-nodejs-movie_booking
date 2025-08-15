@@ -1,81 +1,147 @@
 import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../../shared/services/prisma.service';
-import { UserDto } from '../../shared/models/user.model';
-import { VerifyOtpCodeDTO } from './user.dto';
-import { VerificationCodeType } from '../../shared/constants/auth.constant';
+import { PrismaService } from 'src/shared/services/prisma.service'
+import { CreateUserBodyDTO, CreateUserResDTO, GetUsersQueryBodyDTO, GetUsersResDTO, UpdateUserBodyDTO } from './user.dto'
+import { UserDto } from '../../shared/models/user.model'
 
-// kiểu tìm kiếm ngoài id or email còn có thể đính kèm như deleteAt:null
-type WhereUniqueUserType = { id: number; [key: string]: any } | { email: string; [key: string]: any }
+export type WhereUniqueUserType = { id: number } | { email: string }
+
 @Injectable()
+export class UserRepo {
+  constructor(private prismaService: PrismaService) { }
 
-export class UserRepository {
-  constructor(private readonly prismaService: PrismaService) { }
+  async list(pagination: GetUsersQueryBodyDTO): Promise<GetUsersResDTO> {
+    const skip = (pagination.page - 1) * pagination.limit
+    const take = pagination.limit
+    const [totalItems, data] = await Promise.all([
+      this.prismaService.user.count({
+        where: {
+          deletedAt: null,
+        },
+      }),
+      this.prismaService.user.findMany({
+        where: {
+          deletedAt: null,
+        },
+        skip,
+        take,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          roleId: true,
+          phoneNumber: true,
+          avatar: true,
+          createdById: true,
+          updatedById: true,
+          deletedById: true,
+          role: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+    ])
+    return {
+      data,
+      totalItems,
+      page: pagination.page,
+      limit: pagination.limit,
+      totalPages: Math.ceil(totalItems / pagination.limit),
+    }
+  }
 
-  // hàm tìm theo email or id 
-  async findUnique(where: WhereUniqueUserType): Promise<UserDto | null> {
-    return this.prismaService.user.findUnique({
-      where
+  findUnique(where: WhereUniqueUserType): Promise<UserDto | null> {
+    return this.prismaService.user.findFirst({
+      where: {
+        ...where,
+        deletedAt: null,
+      },
     })
   }
 
-  async createVerificationCode(
-    payload: Pick<VerifyOtpCodeDTO, 'email' | 'type' | 'code' | 'expiresAt'>,
-  ): Promise<VerifyOtpCodeDTO> {
-    return this.prismaService.verifyOtpCode.upsert({
+  findUniqueIncludeRolePermissions(where: WhereUniqueUserType) {
+    return this.prismaService.user.findFirst({
       where: {
-        email_code_type: {
-          email: payload.email,
-          code: payload.code,
-          type: payload.type,
+        ...where,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phoneNumber: true,
+        avatar: true,
+        createdById:true,
+        updatedById:true,
+        role: {
+          select: {
+            id: true,
+            name: true,
+            permissions: {
+              where: {
+                deletedAt: null,
+              },
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                module: true,
+                path: true,
+                method: true,
+              },
+            },
+          },
         },
       },
-      create: payload,
-      update: {
-        code: payload.code,
-        expiresAt: payload.expiresAt,
+    })
+  }
+
+  create({ createdById, data }: { createdById: number | null; data: CreateUserBodyDTO }): Promise<CreateUserResDTO> {
+    return this.prismaService.user.create({
+      data: {
+        ...data,
+        createdById,
       },
     })
   }
 
-  //Hàm tìm đến mã code theo email,id or(email,code,type) để check xem nó còn hạn ko
-  async findUniqueVerificationCode(
-    uniqueValue:
-      | { id: number }
-      | {
-        email_code_type: {
-          email: string
-          code: string
-          type: VerificationCodeType
-        }
-      },
-  ): Promise<VerifyOtpCodeDTO | null> {
-    return this.prismaService.verifyOtpCode.findUnique({
-      where: uniqueValue,
-    })
-  }
-
-  //--------------------phần quên mật khẩu----------------
-  updateUser(where: WhereUniqueUserType, data: Partial<UserDto>): Promise<UserDto> {
+  update(where: { id: number }, data: UpdateUserBodyDTO) {
     return this.prismaService.user.update({
-      where,
+      where: {
+        ...where,
+        deletedAt: null,
+      },
       data,
     })
   }
 
-  //XÓA ĐI MÃ OTP KHI ĐÃ XONG
-  deleteVerificationCode(
-    uniqueValue:
-      | { id: number }
-      | {
-        email_code_type: {
-          email: string
-          code: string
-          type: VerificationCodeType
-        }
-      },
-  ): Promise<VerifyOtpCodeDTO> {
-    return this.prismaService.verifyOtpCode.delete({
-      where: uniqueValue,
-    })
+  delete(
+    {
+      id,
+      deletedById,
+    }: {
+      id: number
+      deletedById: number
+    },
+    isHard?: boolean,
+  ): Promise<UserDto> {
+    return isHard
+      ? this.prismaService.user.delete({
+        where: {
+          id,
+        },
+      })
+      : this.prismaService.user.update({
+        where: {
+          id,
+          deletedAt: null,
+        },
+        data: {
+          deletedAt: new Date(),
+          deletedById,
+        },
+      })
   }
 }

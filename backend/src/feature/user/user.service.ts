@@ -1,199 +1,173 @@
-import { Injectable, NotFoundException, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
-import { EmailService } from '../../shared/services/email.service';
-import { ChangePasswordBodyDTO, ForgotPasswordBodyDTO, SendOtpBodyDTO, UpdateMeBodyDTO } from './user.dto';
-import envConfig from '../../shared/config';
-import { addMilliseconds } from 'date-fns'
-import ms from 'ms'
-import { generateOTP } from '../../shared/helpers';
-import { VerificationCode, VerificationCodeType } from '../../shared/constants/auth.constant';
-import { UserRepository } from './user.repo';
-import { HashingService } from '../../shared/services/hashing.service';
-import { Prisma } from '@prisma/client';
+import { ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common'
+import { HashingService } from 'src/shared/services/hashing.service'
+import { SharedRoleRepository } from 'src/shared/repositories/shared-role.repo'
+import { UserRepo } from './user.repo'
+import { CreateUserBodyDTO, GetUsersQueryBodyDTO, UpdateUserBodyDTO } from './user.dto'
+import { RoleName } from '../../shared/constants/role.constant'
+import { Prisma } from '@prisma/client'
 
 @Injectable()
 export class UserService {
   constructor(
-    private readonly emailService: EmailService,
-    private readonly userRepository: UserRepository,
-    private readonly hashingService: HashingService
+    private userRepo: UserRepo,
+    private hashingService: HashingService,
+    private sharedRoleRepository: SharedRoleRepository,
   ) { }
 
-  async sendOTP(body: SendOtpBodyDTO) {
-    // 1. Kiểm tra email đã tồn tại trong database chưa
-    const user = await this.userRepository.findUnique({
-      email: body.email,
-    })
-
-    //nếu chọn quên mật khẩu và chưa có user,đưa ra thông báo lỗi
-    if (body.type === VerificationCode.FORGOT_PASSWORD && !user) {
-      throw new UnprocessableEntityException([
-        {
-          message: 'Email không tồn tại',
-          path: 'email',
-        },
-      ])
-    }
-
-    // 2. Tạo mã OTP
-    const code = generateOTP()
-    const verificationCode = this.userRepository.createVerificationCode({
-      email: body.email,
-      code,
-      type: body.type,
-      expiresAt: addMilliseconds(new Date(), ms(envConfig.OTP_EXPIRES_IN)),
-    })
-
-    // 3. Gửi mã OTP
-    const { error } = await this.emailService.sendOTP({
-      email: body.email,
-      code,
-    })
-    if (error) {
-      throw new UnprocessableEntityException([
-        {
-          message: 'Gửi mã OTP thất bại',
-          path: 'code',
-        },
-      ])
-    }
-    return verificationCode
+  list(pagination: GetUsersQueryBodyDTO) {
+    return this.userRepo.list(pagination)
   }
 
-  //hàm kiểm tra xem mã OTP đã hết hạn chưa
-  async validateVerificationCode({
-    email,
-    code,
-    type,
-  }: {
-    email: string
-    code: string
-    type: VerificationCodeType
-  }) {
-    const vevificationCode = await this.userRepository.findUniqueVerificationCode({
-      email_code_type: {
-        email,
-        code,
-        type,
-      }
-    })
-    if (!vevificationCode) {
-      throw new UnprocessableEntityException([
-        {
-          message: 'Mã OTP không hợp lệ',
-          path: 'code',
-        },
-      ])
-    }
-    if (vevificationCode.expiresAt < new Date()) {
-      throw new UnprocessableEntityException([
-        {
-          message: 'Mã OTP đã hết hạn',
-          path: 'code',
-        },
-      ])
-    }
-    return vevificationCode
-  }
-
-  async forgotPassword(body: ForgotPasswordBodyDTO) {
-    const { email, code, newPassword } = body
-    // 1. Kiểm tra email đã tồn tại trong database chưa
-    const user = await this.userRepository.findUnique({
-      email,
+  async findById(id: number) {
+    const user = await this.userRepo.findUniqueIncludeRolePermissions({
+      id,
     })
     if (!user) {
-      throw new UnprocessableEntityException([
-        {
-          message: 'Email không tồn tại',
-          path: 'email',
-        },
-      ])
+      throw new NotFoundException(`Không tìm thấy user có id bằng ${id}`)
     }
+    return user
+  }
 
-    //2. Kiểm tra mã OTP có hợp lệ không
-    await this.validateVerificationCode({
-      email,
-      code,
-      type: VerificationCode.FORGOT_PASSWORD
-    })
-    //3. Cập nhật lại mật khẩu mới và xóa đi OTP
-    const hashedPassword = await this.hashingService.hash(newPassword)
-    await Promise.all([
-      this.userRepository.updateUser(
-        { id: user.id },
-        {
-          password: hashedPassword,
-        },
-      ),
-      this.userRepository.deleteVerificationCode({
-        email_code_type: {
-          email: body.email,
-          code: body.code,
-          type: VerificationCode.FORGOT_PASSWORD,
-        }
-      }),
-    ])
-    return {
-      message: 'Đổi mật khẩu thành công',
+  /**
+  * Function này kiểm tra xem người thực hiện có quyền tác động đến người khác không.
+  * Vì chỉ có người thực hiện là admin role mới có quyền sau: Tạo admin user, update roleId thành admin, xóa admin user.
+  * Còn nếu không phải admin thì không được phép tác động đến admin
+  */
+  private async verifyRole({ roleNameAgent, roleIdTarget }) {
+    // Agent là admin thì cho phép
+    if (roleNameAgent === RoleName.Admin) {
+      return true
+    } else {
+      // Agent không phải admin thì roleIdTarget phải khác admin
+      const adminRoleId = await this.sharedRoleRepository.getAdminRoleId()
+      if (roleIdTarget === adminRoleId) {
+        throw new ForbiddenException("Bạn không được phép tác động đến user có quyền Admin.");
+      }
+      return true
     }
   }
 
-  // hàm update thông tin
-  async updateProfile({ userId, body }: { userId: number; body: UpdateMeBodyDTO }) {
+  async create({ data, createdById, createdByRoleName }: {
+    data: CreateUserBodyDTO
+    createdById: number
+    createdByRoleName: string
+  }) {
     try {
-      return await this.userRepository.updateUser(
-        {
-          id: userId,
-          deletedAt: null
+      // Chỉ có admin cấp cao nhất mới có quyền tạo user với role là admin
+      await this.verifyRole({
+        roleNameAgent: createdByRoleName,
+        roleIdTarget: data.roleId,
+      })
+      // Hash the password
+      const hashedPassword = await this.hashingService.hash(data.password)
+
+      const user = await this.userRepo.create({
+        createdById,
+        data: {
+          ...data,
+          password: hashedPassword,
         },
-        {
-          ...body,
-          updatedById: userId,
-        },
-      )
+      })
+      return user
     } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+        throw new NotFoundException("Không có role này")
+      }
+
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new NotFoundException(`Không tìm thấy user cần update có id là :${userId}`)
+        throw new UnprocessableEntityException("User này đã có sẵn,ko tạo được!")
       }
       throw error
     }
   }
 
-  // hàm đổi password
-  async changePassword({ userId, body }: { userId: number; body: Omit<ChangePasswordBodyDTO, 'confirmNewPassword'> }) {
-    try {
-      const { password, newPassword } = body
-      const user = await this.userRepository.findUnique({
-        id: userId,
-        deletedAt: null,
-      })
-      if (!user) {
-        throw new NotFoundException("Không tìm thấy user!")
-      }
-      //so sánh password cũ và password hiện tại điền
-      const isPasswordMatch = await this.hashingService.compare(password, user.password)
-      if (!isPasswordMatch) {
-        throw new UnauthorizedException('Mật khẩu hiện tại không đúng');
-      }
-      //hashing password mới
-      const hashedPassword = await this.hashingService.hash(newPassword)
+  private async getRoleIdByUserId(userId: number) {
+    const currentUser = await this.userRepo.findUnique({
+      id: userId,
+    })
+    if (!currentUser) {
+      throw new NotFoundException(`Không tìm thấy user hiện tại!`)
+    }
+    return currentUser.roleId
+  }
 
-      await this.userRepository.updateUser(
+  async update({
+    id,
+    data,
+    updatedById,
+    updatedByRoleName,
+  }: {
+    id: number
+    data: UpdateUserBodyDTO
+    updatedById: number
+    updatedByRoleName: string
+  }) {
+    try {
+      // Không thể cập nhật chính mình
+      this.verifyYourself({
+        userAgentId: updatedById,
+        userTargetId: id,
+      })
+
+      // Lấy roleId ban đầu của người được update để kiểm tra xem liệu người update có quyền update không
+      // Không dùng data.roleId vì dữ liệu này có thể bị cố tình truyền sai
+      const roleIdTarget = await this.getRoleIdByUserId(id)
+      await this.verifyRole({
+        roleNameAgent: updatedByRoleName,
+        roleIdTarget,
+      })
+
+      const updatedUser = await this.userRepo.update({ id },
         {
-          id: userId,
-          deletedAt: null
-        },
-        {
-          password: hashedPassword,
-          updatedById: userId,
+          ...data,
+          updatedById
         },
       )
+      return updatedUser
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException(`Không tìm thấy user có id bằng ${id} để update`)
+      }
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new UnprocessableEntityException("User này đã có sẵn!")
+      }
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+        throw new UnprocessableEntityException("Bạn không có quyền update chính mình!")
+      }
+      throw error
+    }
+  }
+
+  private verifyYourself({ userAgentId, userTargetId }: { userAgentId: number; userTargetId: number }) {
+    if (userAgentId === userTargetId) {
+      throw new ForbiddenException("Bạn không có quyền cập nhật or xóa chính mình,chỉ admin mới được xóa!")
+    }
+  }
+
+  async delete({ id, deletedById, deletedByRoleName }: { id: number; deletedById: number; deletedByRoleName: string }) {
+    try {
+      // Không thể xóa chính mình
+      this.verifyYourself({
+        userAgentId: deletedById,
+        userTargetId: id,
+      })
+
+      const roleIdTarget = await this.getRoleIdByUserId(id)
+      await this.verifyRole({
+        roleNameAgent: deletedByRoleName,
+        roleIdTarget,
+      })
+
+      await this.userRepo.delete({
+        id,
+        deletedById,
+      })
       return {
-        message: 'Thay đổi mật khẩu thành công !',
+        message: 'Delete successfully',
       }
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new NotFoundException(`Không tìm thấy user cần update có id là :${userId}`)
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException(`Không tìm thấy user có id bằng ${id} để xóa!`)
       }
       throw error
     }
