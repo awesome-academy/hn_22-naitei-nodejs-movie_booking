@@ -43,6 +43,18 @@ class ConfigSchema {
 
   @IsString()
   RESEND_API_KEY: string
+
+  @IsString()
+  AWS_S3_REGION:string
+
+  @IsString()
+  AWS_S3_ACCESS_KEY:string
+
+  @IsString()
+  AWS_S3_SERCRET_KEY:string
+  
+  @IsString()
+  AWS_BUCKET_NAME:string
 }
 const configServer = plainToInstance(ConfigSchema, process.env, {
   enableImplicitConversion: true,
