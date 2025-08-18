@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   CalendarIcon, 
   PlusIcon, 
@@ -11,7 +11,8 @@ import {
   SaveIcon,
   ClockIcon,
   FilmIcon,
-  BuildingIcon
+  BuildingIcon,
+  ChevronDownIcon
 } from 'lucide-react';
 import { scheduleAPI, movieAPI, cinemaAPI } from '../../lib/api';
 import { toast } from 'react-toastify';
@@ -30,12 +31,19 @@ const ManageSchedules = () => {
   });
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [movieFilter, setMovieFilter] = useState('');
+  const [cinemaFilter, setCinemaFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('create'); 
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [selectedCinema, setSelectedCinema] = useState('');
+  
+  // Movie search states
+  const [movieSearch, setMovieSearch] = useState('');
+  const [showMovieSuggestions, setShowMovieSuggestions] = useState(false);
+  const [filteredMovies, setFilteredMovies] = useState([]);
+  const movieSearchRef = useRef(null);
+  const suggestionsRef = useRef(null);
   
   const [formData, setFormData] = useState({
     movieId: '',
@@ -52,26 +60,87 @@ const ManageSchedules = () => {
     if (movies.length > 0) {
       fetchSchedules();
     }
-  }, [pagination.page, pagination.limit, movieFilter, dateFilter, movies]);
+  }, [pagination.page, pagination.limit, cinemaFilter, dateFilter, movies]);
+
+  // Handle movie search
+  useEffect(() => {
+    if (movieSearch.trim()) {
+      const filtered = movies.filter(movie =>
+        movie.title.toLowerCase().includes(movieSearch.toLowerCase())
+      );
+      setFilteredMovies(filtered);
+    } else {
+      setFilteredMovies([]);
+    }
+  }, [movieSearch, movies]);
+
+  // Handle click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        movieSearchRef.current && 
+        !movieSearchRef.current.contains(event.target) &&
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target)
+      ) {
+        setShowMovieSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const fetchSchedules = async () => {
     try {
       setLoading(true);
       
-      if (movieFilter) {
-        const params = {};
-        if (dateFilter) {
-          params.date = dateFilter;
+      if (cinemaFilter) {
+        // Fetch schedules for specific cinema
+        const cinema = cinemas.find(c => c.id.toString() === cinemaFilter);
+        if (!cinema || !cinema.rooms) {
+          setSchedules([]);
+          setPagination(prev => ({ ...prev, totalPages: 1, totalItems: 0 }));
+          return;
+        }
+
+        const allSchedules = [];
+        for (const room of cinema.rooms) {
+          for (const movie of movies) {
+            try {
+              const params = {};
+              if (dateFilter) {
+                params.date = dateFilter;
+              }
+              const response = await scheduleAPI.getByMovieId(movie.id, params);
+              if (Array.isArray(response.data)) {
+                // Filter schedules that belong to this room
+                const roomSchedules = response.data.filter(schedule => 
+                  schedule.room?.id === room.id
+                );
+                allSchedules.push(...roomSchedules);
+              }
+            } catch (error) {
+              console.warn(`Error fetching schedules for movie ${movie.id}, room ${room.id}:`, error);
+            }
+          }
         }
         
-        const response = await scheduleAPI.getByMovieId(movieFilter, params);
-        const scheduleData = Array.isArray(response.data) ? response.data : [];
+        // Sort by newest
+        allSchedules.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
         
-        setSchedules(scheduleData);
+        // Pagination
+        const startIndex = (pagination.page - 1) * pagination.limit;
+        const endIndex = startIndex + pagination.limit;
+        const paginatedSchedules = allSchedules.slice(startIndex, endIndex);
+        
+        setSchedules(paginatedSchedules);
         setPagination(prev => ({
           ...prev,
-          totalPages: Math.ceil(scheduleData.length / pagination.limit),
-          totalItems: scheduleData.length
+          totalPages: Math.ceil(allSchedules.length / pagination.limit),
+          totalItems: allSchedules.length
         }));
       } else {
         // Fetch all schedules from all movies
@@ -159,6 +228,7 @@ const ManageSchedules = () => {
         startTime: ''
       });
       setSelectedCinema('');
+      setMovieSearch('');
       setRooms([]);
     } else if (type === 'edit' && schedule) {
       setFormData({
@@ -166,6 +236,8 @@ const ManageSchedules = () => {
         roomId: schedule.room?.id?.toString() || '',
         startTime: new Date(schedule.startTime).toISOString().slice(0, 16)
       });
+      
+      setMovieSearch(schedule.movie?.title || '');
       
       const cinemaId = schedule.room?.cinema?.id || schedule.room?.cinemaId;
       if (cinemaId) {
@@ -187,6 +259,8 @@ const ManageSchedules = () => {
       startTime: ''
     });
     setSelectedCinema('');
+    setMovieSearch('');
+    setShowMovieSuggestions(false);
     setRooms([]);
   };
 
@@ -203,6 +277,23 @@ const ManageSchedules = () => {
     } else {
       setRooms([]);
     }
+  };
+
+  const handleMovieSearchChange = (e) => {
+    const value = e.target.value;
+    setMovieSearch(value);
+    setShowMovieSuggestions(true);
+    
+    // Clear movie ID if search is cleared
+    if (!value.trim()) {
+      setFormData(prev => ({ ...prev, movieId: '' }));
+    }
+  };
+
+  const handleMovieSelect = (movie) => {
+    setMovieSearch(movie.title);
+    setFormData(prev => ({ ...prev, movieId: movie.id.toString() }));
+    setShowMovieSuggestions(false);
   };
 
   const handleSubmit = async (e) => {
@@ -270,13 +361,9 @@ const ManageSchedules = () => {
 
   const filteredSchedules = schedules.filter(schedule => {
     const movieTitle = schedule.movie?.title?.toLowerCase() || '';
-    const cinemaName = schedule.room?.cinema?.name?.toLowerCase() || '';
-    const roomName = schedule.room?.name?.toLowerCase() || '';
     const searchLower = searchTerm.toLowerCase();
     
-    return movieTitle.includes(searchLower) || 
-           cinemaName.includes(searchLower) || 
-           roomName.includes(searchLower);
+    return movieTitle.includes(searchLower);
   });
 
   const formatDateTime = (dateString) => {
@@ -294,21 +381,23 @@ const ManageSchedules = () => {
   };
 
   const handleFilterChange = (field, value) => {
-    if (field === 'movie') setMovieFilter(value);
+    if (field === 'cinema') setCinemaFilter(value);
     if (field === 'date') setDateFilter(value);
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
-      if (loading && schedules.length === 0) {
-        return (
-          <div className="min-h-screen bg-black text-white flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto"></div>
-              <p className="mt-4 text-gray-400">Loading schedules...</p>
-            </div>
-          </div>
-        );
-      }  return (
+  if (loading && schedules.length === 0) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto"></div>
+          <p className="mt-4 text-gray-400">Loading schedules...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
     <div className="min-h-screen bg-black text-white p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -325,7 +414,7 @@ const ManageSchedules = () => {
             <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search schedules..."
+              placeholder="Search by movie name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -334,14 +423,14 @@ const ManageSchedules = () => {
           
           {/* Filters */}
           <select
-            value={movieFilter}
-            onChange={(e) => handleFilterChange('movie', e.target.value)}
+            value={cinemaFilter}
+            onChange={(e) => handleFilterChange('cinema', e.target.value)}
             className="px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
           >
-            <option value="">All Movies</option>
-            {movies.map(movie => (
-              <option key={movie.id} value={movie.id}>
-                {movie.title}
+            <option value="">All Cinemas</option>
+            {cinemas.map(cinema => (
+              <option key={cinema.id} value={cinema.id}>
+                {cinema.name}
               </option>
             ))}
           </select>
@@ -455,7 +544,7 @@ const ManageSchedules = () => {
               <CalendarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-400 text-lg">No schedules found</p>
               <p className="text-gray-500 mt-2">
-                {searchTerm || movieFilter || dateFilter 
+                {searchTerm || cinemaFilter || dateFilter 
                   ? 'Try adjusting your search filters' 
                   : 'Add some schedules to get started'
                 }
@@ -560,24 +649,45 @@ const ManageSchedules = () => {
             ) : (
               <form onSubmit={handleSubmit} className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Movie *
                     </label>
-                    <select
-                      name="movieId"
-                      value={formData.movieId}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      required
-                    >
-                      <option value="">Select Movie</option>
-                      {movies.map(movie => (
-                        <option key={movie.id} value={movie.id}>
-                          {movie.title}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative" ref={movieSearchRef}>
+                      <input
+                        type="text"
+                        value={movieSearch}
+                        onChange={handleMovieSearchChange}
+                        onFocus={() => setShowMovieSuggestions(true)}
+                        placeholder="Search for a movie..."
+                        className="w-full px-4 py-2 pr-10 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        required
+                      />
+                      <ChevronDownIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+                      
+                      {showMovieSuggestions && filteredMovies.length > 0 && (
+                        <div 
+                          ref={suggestionsRef}
+                          className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                        >
+                          {filteredMovies.map(movie => (
+                            <div
+                              key={movie.id}
+                              onClick={() => handleMovieSelect(movie)}
+                              className="px-4 py-3 hover:bg-gray-700 cursor-pointer text-white border-b border-gray-700 last:border-b-0"
+                            >
+                              <div className="flex items-center">
+                                <FilmIcon className="w-4 h-4 text-red-500 mr-2" />
+                                <div>
+                                  <div className="font-medium">{movie.title}</div>
+                                  <div className="text-sm text-gray-400">{movie.genre} • {movie.durationMinutes} min</div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div>
@@ -645,7 +755,7 @@ const ManageSchedules = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !formData.movieId}
                     className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
                   >
                     <SaveIcon className="w-4 h-4" />
