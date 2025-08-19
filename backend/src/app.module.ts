@@ -13,6 +13,7 @@ import { RoleModule } from './feature/role/role.module'
 import { TicketModule } from './feature/ticket/module/ticket.module'
 import { PaymentModule } from './feature/payment/module/payment.module'
 import { UserModule } from './feature/user/user.module'
+import { StatisticModule } from './feature/statistic/module/statistic.module'
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { UserModule } from './feature/user/user.module'
     RoleModule,
     TicketModule,
     PaymentModule,
-    UserModule
+    UserModule,
+    StatisticModule
   ],
   controllers: [AppController],
   providers: [
