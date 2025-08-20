@@ -9,6 +9,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../lib/api";
+import Loading from "./Loading";
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -21,8 +22,10 @@ const HeroSection = () => {
   useEffect(() => {
     const fetchLatestMovies = async () => {
       try {
-        const res = await api.get("/movies");
-        let allMovies = res.data.movies;
+        const res = await api.get("/movies/top-favorites");
+        let allMovies = Array.isArray(res.data)
+          ? res.data
+          : res.data.movies || [];
 
         const latestMovies = allMovies
           .sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate))
@@ -63,11 +66,7 @@ const HeroSection = () => {
   const movie = movies[currentIndex];
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen text-gray-400 text-xl">
-        Đang tải phim...
-      </div>
-    );
+    return <Loading />;
   }
 
   if (error || !movie) {

@@ -37,6 +37,11 @@ export class MovieRepository {
             category: true,
           },
         },
+        _count: {
+          select: {
+            favorites: true,
+          },
+        },
       },
     })
   }

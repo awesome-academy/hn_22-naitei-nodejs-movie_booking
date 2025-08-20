@@ -80,7 +80,11 @@ export class MovieService {
     ])
 
     return {
-      movies,
+      movies: (movies as any[]).map((m: any) => ({
+        ...m,
+        favoritesCount: m?._count?.favorites ?? 0,
+        _count: undefined,
+      })),
       pagination: {
         page,
         limit,

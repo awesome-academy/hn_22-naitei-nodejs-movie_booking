@@ -2,6 +2,19 @@ import React, { useEffect, useState } from "react";
 import api from "../lib/api";
 import BlurCircle from "./BlurCircle";
 import { PlayCircleIcon } from "lucide-react";
+import Loading from "./Loading";
+
+function toYoutubeEmbed(url) {
+  if (!url) return "";
+  if (url.includes("youtube.com/embed/")) return url;
+  const match = url.match(
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]+)/
+  );
+  if (match && match[1]) {
+    return `https://www.youtube.com/embed/${match[1]}`;
+  }
+  return url;
+}
 
 const TrailersSection = () => {
   const [trailers, setTrailers] = useState([]);
@@ -12,12 +25,14 @@ const TrailersSection = () => {
   useEffect(() => {
     const fetchTrailers = async () => {
       try {
-        const res = await api.get("/movies");
-        const movies = res.data.movies;
+        const res = await api.get("/movies/top-favorites");
+        const movies = Array.isArray(res.data)
+          ? res.data
+          : res.data.movies || [];
         const trailersData = movies
           .filter((m) => m.trailerUrl)
           .map((m) => ({
-            videoUrl: m.trailerUrl,
+            videoUrl: toYoutubeEmbed(m.trailerUrl),
             image: m.posterUrl,
             title: m.title,
           }));
@@ -33,11 +48,7 @@ const TrailersSection = () => {
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96 text-gray-400 text-xl">
-        Đang tải trailer...
-      </div>
-    );
+    return <Loading />;
   }
   if (error || !trailers.length) {
     return (
@@ -66,7 +77,7 @@ const TrailersSection = () => {
           />
         )}
       </div>
-      <div className=" group grid grid-cols-4 gap-4 md:gap-8 mt-8 max-w-3xl mx-auto">
+      <div className=" group grid grid-cols-5 gap-4 md:gap-8 mt-8 max-w-3xl mx-auto">
         {trailers.map((trailer, idx) => (
           <div
             key={trailer.image + idx}
