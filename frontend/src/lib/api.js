@@ -21,6 +21,14 @@ export const permissionAPI = {
   delete: (id) => api.delete(`/permissions/${id}`),
 };
 
+export const roleAPI = {
+  getAll: (params = {}) => api.get('/role', { params }),
+  getById: (id) => api.get(`/role/${id}`),
+  create: (data) => api.post('/role', data),
+  update: (id, data) => api.put(`/role/${id}`, data),
+  delete: (id) => api.delete(`/role/${id}`),
+};
+
 export const movieAPI = {
   getAll: (params = {}) => api.get('/movies', { params }),
   getById: (id) => api.get(`/movies/${id}`),
