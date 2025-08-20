@@ -1,7 +1,7 @@
 import React from "react";
 import { assets } from "../../assets/assets";
 import { Link, NavLink } from "react-router-dom";
-import {LayoutDashboardIcon, ShieldIcon, FilmIcon, BuildingIcon, CalendarIcon} from 'lucide-react'
+import {LayoutDashboardIcon, ShieldIcon, FilmIcon, BuildingIcon, CalendarIcon, Users} from 'lucide-react'
 const AdminSidebar = () => {
   const user ={
     firstName:"Admin",
@@ -14,6 +14,7 @@ const AdminSidebar = () => {
     { name: "Manage Movies", path: "/admin/manage-movies", icon: FilmIcon },
     { name: "Manage Cinemas", path: "/admin/manage-cinemas", icon: BuildingIcon },
     { name: "Manage Schedules", path: "/admin/manage-schedules", icon: CalendarIcon },
+    { name: "Manage Roles", path: "/admin/manage-roles", icon: Users },
     { name: "Manage Permissions", path: "/admin/manage-permissions", icon: ShieldIcon}
   ]
   return (

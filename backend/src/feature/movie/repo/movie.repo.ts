@@ -158,4 +158,66 @@ export class MovieRepository {
       where: { movieId },
     })
   }
+
+  async addFavorite(movieId: number, userId: number) {
+    try {
+      return await this.prisma.favorite.create({
+        data: {
+          userId,
+          movieId,
+          addedAt: new Date(),
+        },
+      })
+    } catch (error) {
+      // If favorite already exists, return null
+      if (error.code === 'P2002') {
+        return null
+      }
+      throw error
+    }
+  }
+
+  async removeFavorite(movieId: number, userId: number) {
+    try {
+      return await this.prisma.favorite.delete({
+        where: { userId_movieId: { userId, movieId } },
+      })
+    } catch (error) {
+      // If favorite doesn't exist, return null
+      if (error.code === 'P2025') {
+        return null
+      }
+      throw error
+    }
+  }
+
+  async findFavorite(movieId: number, userId: number) {
+    return this.prisma.favorite.findUnique({
+      where: { userId_movieId: { userId, movieId } },
+    })
+  }
+
+  async getTopFavoriteMovies(limit: number = 5) {
+    const movies = await this.prisma.movie.findMany({
+      include: {
+        _count: {
+          select: {
+            favorites: true,
+          },
+        },
+      },
+      orderBy: {
+        favorites: {
+          _count: 'desc',
+        },
+      },
+      take: limit,
+    })
+
+    return movies.map((movie) => ({
+      ...movie,
+      favorite_count: movie._count.favorites,
+      _count: undefined,
+    }))
+  }
 }

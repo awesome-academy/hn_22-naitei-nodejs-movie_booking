@@ -1,8 +1,9 @@
-import { Body, Controller, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Put, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { UserService } from './profile.service';
 import { ChangePasswordBodyDTO, ChangePasswordResDTO, ForgotPasswordBodyDTO, ForgotPasswordResDTO, SendOtpBodyDTO, UpdateMeBodyDTO, UpdateMeResDTO } from './profile.dto';
 import { ActiveUser } from '../../shared/decorators/active-user.decorator';
 import { AccessTokenGuard } from '../../shared/guards/access-token.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('profiles')
 export class ProfileController {
@@ -20,13 +21,18 @@ export class ProfileController {
 
   @UseGuards(AccessTokenGuard)
   @Put('update-profile')
-  async updateProfile(@Body() body: UpdateMeBodyDTO, @ActiveUser('userId') userId: number) {
-    return new UpdateMeResDTO(await this.userService.updateProfile({
-      userId,
-      body
-    }))
+  @UseInterceptors(FileInterceptor('avatar', {
+    limits: { fileSize: 5 * 1024 * 1024 }
+  }))
+  async updateProfile(
+    @UploadedFile() avatar: Express.Multer.File,
+    @Body() body: UpdateMeBodyDTO,
+    @ActiveUser('userId') userId: number
+  ) {
+    const updatedUser = await this.userService.updateProfile(userId, body, avatar)
+    return new UpdateMeResDTO(updatedUser)
   }
-  
+
   @UseGuards(AccessTokenGuard)
   @Put('change-password')
   async changePassword(@Body() body: ChangePasswordBodyDTO, @ActiveUser('userId') userId: number) {

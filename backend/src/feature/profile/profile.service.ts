@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
 import { EmailService } from '../../shared/services/email.service';
 import { ChangePasswordBodyDTO, ForgotPasswordBodyDTO, SendOtpBodyDTO, UpdateMeBodyDTO } from './profile.dto';
 import envConfig from '../../shared/config';
@@ -9,13 +9,16 @@ import { VerificationCode, VerificationCodeType } from '../../shared/constants/a
 import { ProfileRepository } from './profile.repo';
 import { HashingService } from '../../shared/services/hashing.service';
 import { Prisma } from '@prisma/client';
+import { S3Service } from '../../shared/services/s3.service';
+import { unlink } from 'fs/promises';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly emailService: EmailService,
     private readonly profileRepository: ProfileRepository,
-    private readonly hashingService: HashingService
+    private readonly hashingService: HashingService,
+    private readonly s3Service:S3Service
   ) { }
 
   async sendOTP(body: SendOtpBodyDTO) {
@@ -139,21 +142,49 @@ export class UserService {
   }
 
   // hàm update thông tin
-  async updateProfile({ userId, body }: { userId: number; body: UpdateMeBodyDTO }) {
+  async updateProfile(
+    userId: number,
+    body: UpdateMeBodyDTO,
+    avatar?: Express.Multer.File
+  ) {
+    let avatarUrl = body.avatar // mặc định lấy từ body (nếu gửi link sẵn)
+
+    if (avatar) {
+      // upload file lên S3
+      const uploadResult = await this.s3Service.uploadedFile({
+        filename: `avatars/${Date.now()}-${avatar.originalname}`,
+        filepath: avatar.path,
+        contentType: avatar.mimetype,
+      })
+
+      if (!uploadResult || !uploadResult.Location) {
+        throw new BadRequestException('Upload avatar thất bại')
+      }
+
+      avatarUrl = uploadResult.Location
+
+      // Xoá file tạm
+      await unlink(avatar.path)
+    }
+
     try {
-      return await this.profileRepository.updateUser(
-        {
-          id: userId,
-          deletedAt: null
-        },
+      const updatedUser = await this.profileRepository.updateUser(
+        { id: userId },
         {
           ...body,
+          avatar: avatarUrl,      
           updatedById: userId,
         },
       )
+
+      if (!updatedUser) {
+        throw new NotFoundException(`Không tìm thấy user cần update có id là: ${userId}`)
+      }
+
+      return updatedUser
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new NotFoundException(`Không tìm thấy user cần update có id là :${userId}`)
+        throw new NotFoundException(`Không tìm thấy user cần update có id là: ${userId}`)
       }
       throw error
     }

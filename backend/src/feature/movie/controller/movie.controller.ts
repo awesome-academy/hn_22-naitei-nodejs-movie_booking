@@ -14,6 +14,7 @@ import {
 import { MovieService } from '../service/movie.service'
 import { CreateMovieDTO, UpdateMovieDTO, MovieQueryDTO } from '../dto'
 import { AccessTokenGuard } from '../../../shared/guards/access-token.guard'
+import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
 
 @Controller('movies')
 export class MovieController {
@@ -21,7 +22,6 @@ export class MovieController {
 
   @Post()
   @UseGuards(AccessTokenGuard)
-  // @Roles('admin')
   async createMovie(@Body(ValidationPipe) createMovieDto: CreateMovieDTO) {
     return this.movieService.createMovie(createMovieDto)
   }
@@ -36,6 +36,11 @@ export class MovieController {
     return this.movieService.getCategories()
   }
 
+  @Get('top-favorites')
+  async getTopFavoriteMovies() {
+    return this.movieService.getTopFavoriteMovies()
+  }
+
   @Get(':id')
   async getMovieById(@Param('id', ParseIntPipe) id: number) {
     return this.movieService.getMovieById(id)
@@ -43,14 +48,12 @@ export class MovieController {
 
   @Put(':id')
   @UseGuards(AccessTokenGuard)
-  // @Roles('admin')
   async updateMovie(@Param('id', ParseIntPipe) id: number, @Body(ValidationPipe) updateMovieDto: UpdateMovieDTO) {
     return this.movieService.updateMovie(id, updateMovieDto)
   }
 
   @Delete(':id')
   @UseGuards(AccessTokenGuard)
-  // @Roles('admin')
   async deleteMovie(@Param('id', ParseIntPipe) id: number, @Body('confirm') confirm: boolean) {
     const movie = await this.movieService.getMovieById(id)
 
@@ -71,5 +74,17 @@ export class MovieController {
     }
 
     return await this.movieService.deleteMovie(id)
+  }
+
+  @Put(':id/favorite')
+  @UseGuards(AccessTokenGuard)
+  async toggleFavorite(@Param('id', ParseIntPipe) id: number, @ActiveUser('userId') userId: number) {
+    return this.movieService.toggleFavorite(id, userId)
+  }
+
+  @Get(':id/favorite/status')
+  @UseGuards(AccessTokenGuard)
+  async checkFavoriteStatus(@Param('id', ParseIntPipe) id: number, @ActiveUser('userId') userId: number) {
+    return this.movieService.checkFavoriteStatus(id, userId)
   }
 }
