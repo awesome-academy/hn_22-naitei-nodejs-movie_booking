@@ -1,44 +1,64 @@
-import { StarIcon } from "lucide-react";
-import React from "react";
+import { Star } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import timeFormat from "../lib/timeFormat";
+import { movieAPI } from "../lib/api";
 
 const MovieCard = ({ movie }) => {
   const navigate = useNavigate();
 
-  if (!movie) {
-    return null;
-  }
+  if (!movie) return null;
+
+  const [isFav, setIsFav] = useState(!!movie.isFavorited);
+  const [favCount, setFavCount] = useState(
+    typeof movie.favoritesCount === "number" ? movie.favoritesCount : 0
+  );
+
+  useEffect(() => {
+    setIsFav(!!movie.isFavorited);
+    setFavCount(
+      typeof movie.favoritesCount === "number" ? movie.favoritesCount : 0
+    );
+
+    const token = localStorage.getItem("accessToken");
+    if (typeof movie.isFavorited !== "boolean" && token) {
+      movieAPI
+        .checkFavoriteStatus(movie.id)
+        .then((res) => {
+          if (typeof res.data?.favorited === "boolean") {
+            setIsFav(res.data.favorited);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [movie.id]);
 
   const handleClick = () => {
     navigate(`/movies/${movie.id}`);
     scrollTo(0, 0);
   };
 
-  const formatGenres = () => {
-    if (!movie.genre) return "";
-    return movie.genre;
-  };
-
-  const formatYear = () => {
-    if (!movie.releaseDate) return "";
-    return new Date(movie.releaseDate).getFullYear();
-  };
-
-  const formatRuntime = () => {
-    if (!movie.durationMinutes) return "";
-    return timeFormat(movie.durationMinutes);
-  };
-
-  const formatRating = () => {
-    if (!movie.vote_average) return "0.0";
-    return movie.vote_average.toFixed(1);
+  const handleToggleFavorite = async (e) => {
+    e.stopPropagation();
+    try {
+      const res = await movieAPI.toggleFavorite(movie.id);
+      const nextFavorited = res.data?.favorited;
+      const countFromServer = res.data?.favoritesCount;
+      setIsFav(nextFavorited);
+      setFavCount((prev) =>
+        typeof countFromServer === "number"
+          ? countFromServer
+          : Math.max(0, prev + (nextFavorited ? 1 : -1))
+      );
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+    }
   };
 
   return (
     <div
       className="flex flex-col justify-between p-3 bg-gray-800 rounded-2xl
-    hover:-translate-y-1 transition duration-300 w-66"
+      hover:-translate-y-1 transition duration-300 w-66"
     >
       <img
         onClick={handleClick}
@@ -50,22 +70,44 @@ const MovieCard = ({ movie }) => {
       <p className="font-semibold mt-2 truncate">{movie.title}</p>
 
       <p className="text-sm text-gray-400 mt-2">
-        {formatYear()} • {formatGenres()} • {formatRuntime()}
+        {movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : ""} •{" "}
+        {movie.genre || ""} •{" "}
+        {movie.durationMinutes ? timeFormat(movie.durationMinutes) : ""}
       </p>
 
       <div className="flex items-center justify-between mt-4 pb-3">
         <button
           onClick={handleClick}
           className="px-4 py-2 text-xs bg-primary hover:bg-primary-dull 
-        transition rounded-full font-medium cursor-pointer"
+            transition rounded-full font-medium cursor-pointer"
         >
           Buy Tickets
         </button>
 
-        <p className="flex items-center gap-1 text-sm text-gray-400 mt-1 pr-1">
-          <StarIcon className="w-4 h-4 text-primary fill-primary" />
-          {formatRating()}
-        </p>
+        <button
+          className="flex items-center gap-1 text-sm mt-1 pr-1 group"
+          onClick={handleToggleFavorite}
+          title={isFav ? "Remove from favorites" : "Add to favorites"}
+        >
+          <Star
+            className={`w-5 h-5 transition 
+          ${
+            isFav
+              ? "text-primary fill-primary"
+              : "text-primary fill-none stroke-primary group-hover:fill-primary/30"
+          }`}
+            fill={isFav ? "currentColor" : "none"}
+            stroke="currentColor"
+          />
+
+          <span
+            className={`ml-1 font-medium ${
+              isFav ? "text-primary" : "text-gray-400"
+            }`}
+          >
+            {favCount}
+          </span>
+        </button>
       </div>
     </div>
   );

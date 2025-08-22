@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import api from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
@@ -7,6 +7,7 @@ import { toast, Toaster } from "react-hot-toast";
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const location = useLocation();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -38,11 +39,23 @@ const Login = () => {
 
       const { accessToken, refreshToken, user } = res.data;
 
-      // Cập nhật AuthContext
       login({ user, accessToken, refreshToken });
       toast.success("Đăng nhập thành công!");
 
-      navigate("/");
+      // Điều hướng theo roleId
+      // Ưu tiên quay lại trang gốc nếu có (ví dụ từ trang chọn ghế)
+      if (location.state?.from) {
+        navigate(location.state.from, {
+          state: { selectedSeats: location.state.selectedSeats },
+          replace: true,
+        });
+      } else if (user.roleId === 1) {
+        navigate("/admin");
+      } else if (user.roleId === 2) {
+        navigate("/");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       const errorData = err.response?.data;
       const fieldErrs = {};

@@ -25,6 +25,33 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // Đồng bộ login giữa các tab
+  useEffect(() => {
+    const syncAuth = () => {
+      const token = localStorage.getItem("accessToken");
+      const refreshToken = localStorage.getItem("refreshToken");
+      const userStr = localStorage.getItem("user");
+
+      if (token && userStr) {
+        setAuth({
+          isLoggedIn: true,
+          user: JSON.parse(userStr),
+          accessToken: token,
+          refreshToken,
+        });
+      } else {
+        setAuth({
+          isLoggedIn: false,
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+        });
+      }
+    };
+    window.addEventListener("storage", syncAuth);
+    return () => window.removeEventListener("storage", syncAuth);
+  }, []);
+
   const login = ({ user, accessToken, refreshToken }) => {
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
@@ -52,6 +79,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         auth,
+        isLoggedIn: auth.isLoggedIn, // thêm dòng này!
         login,
         logout,
         user: auth.user,
