@@ -55,6 +55,18 @@ class ConfigSchema {
   
   @IsString()
   AWS_BUCKET_NAME:string
+
+   @IsString()
+  GOOGLE_CLIENT_ID : string
+
+  @IsString()
+  GOOGLE_CLIENT_SECRET :string
+
+  @IsString()
+  GOOGLE_REDIRECT_URI :string
+  
+  @IsString()
+  GOOGLE_CLIENT_REDIRECT_URL: String
 }
 const configServer = plainToInstance(ConfigSchema, process.env, {
   enableImplicitConversion: true,
