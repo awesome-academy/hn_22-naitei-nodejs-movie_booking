@@ -1,7 +1,7 @@
 import React from "react";
 import { assets } from "../../assets/assets";
 import { Link, NavLink } from "react-router-dom";
-import {LayoutDashboardIcon, ShieldIcon, FilmIcon, BuildingIcon, CalendarIcon, Users} from 'lucide-react'
+import {LayoutDashboardIcon, ShieldIcon, FilmIcon, BuildingIcon, CalendarIcon, Users, UsersIcon} from 'lucide-react'
 const AdminSidebar = () => {
   const user ={
     firstName:"Admin",
