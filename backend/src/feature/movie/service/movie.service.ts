@@ -236,4 +236,26 @@ export class MovieService {
   async getTopFavoriteMovies() {
     return this.movieRepository.getTopFavoriteMovies(5)
   }
+
+  // movie.service.ts
+  async getFavoriteMovies(userId: number) {
+    // Lấy danh sách movieId mà user này đã favorite
+    const favoriteLinks = await this.movieRepository.findFavoritesByUser(userId)
+    if (!favoriteLinks.length) return []
+
+    // Giả sử favoriteLinks là array object có movieId: [{ movieId: 3 }, { movieId: 7 }]
+    const movieIds = favoriteLinks.map((f) => f.movieId)
+
+    // Lấy thông tin chi tiết các phim
+    // Có thể thêm relations nếu muốn (categories, ...)
+    const movies = await this.movieRepository.findMany({
+      where: { id: { in: movieIds } },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    // (optional) Nếu muốn trả kèm số lượng favorite cho mỗi phim
+    // (movies as any[]).forEach(m => m.favoritesCount = m._count?.favorites ?? 0);
+
+    return movies
+  }
 }
