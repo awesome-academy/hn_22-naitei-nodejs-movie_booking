@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, Length, Matches } from 'class-validator'
+import { IsEmail, IsNotEmpty, IsString, IsUrl, Length, Matches } from 'class-validator'
 import { Match } from '../../shared/decorators/custom-validation.decorator'
 import { Exclude } from 'class-transformer'
 
@@ -62,6 +62,17 @@ export class LogoutBodyDTO extends RefreshTokenBodyDTO {}
 export class LogoutResDTO {
   message: string
   constructor(partial: Partial<LogoutResDTO>) {
+    Object.assign(this, partial)
+  }
+}
+
+export class GetAuthorizationUrlResDTO {
+  @IsString()
+  @IsNotEmpty()
+  @IsUrl()
+  url: string
+
+  constructor(partial: Partial<GetAuthorizationUrlResDTO>) {
     Object.assign(this, partial)
   }
 }
