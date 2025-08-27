@@ -31,19 +31,47 @@ const SeatLayout = () => {
     }
   }, [location.state]);
 
-  const handleProceed = () => {
+  const handleProceed = async () => {
     if (!isLoggedIn) {
       toast.error("Bạn cần đăng nhập để đặt vé!");
       navigate("/login", {
-        state: {
-          from: location.pathname + location.search,
-          selectedSeats,
-        },
+        state: { from: location.pathname + location.search, selectedSeats },
         replace: true,
       });
       return;
     }
-    navigate("/my-bookings", { state: { selectedSeats, selectedScheduleId } });
+    if (!selectedSeats.length || !selectedScheduleId) {
+      toast.error("Bạn chưa chọn ghế hoặc lịch chiếu!");
+      return;
+    }
+    try {
+      const res = await ticketsAPI.bookTickets({
+        scheduleId: selectedScheduleId,
+        seatCodes: selectedSeats,
+      });
+
+      const movie = selectedSchedule?.movie;
+      const room = selectedSchedule?.room;
+      const showTime = selectedSchedule?.startTime;
+      const { ticketIds, seatCodes, scheduleId, totalPrice } = res.data;
+
+      navigate("/payment", {
+        state: {
+          scheduleId,
+          seatCodes,
+          totalPrice,
+          ticketIds,
+          movie,
+          room,
+          showTime,
+        },
+      });
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message ||
+          "Đặt vé thất bại, ghế đã bị đặt hoặc có lỗi xảy ra!"
+      );
+    }
   };
 
   useEffect(() => {
@@ -214,9 +242,7 @@ const SeatLayout = () => {
     <div className="flex flex-col md:flex-row gap-8 px-6 md:px-16 lg:px-40 py-12 md:pt-24">
       <div className="w-full md:w-60 max-md:mb-8">
         <button
-          onClick={() =>
-            navigate(`/movies/${id}`, { state: { scrollToShowtime: true } })
-          }
+          onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />

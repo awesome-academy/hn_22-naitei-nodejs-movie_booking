@@ -36,11 +36,14 @@ export class TicketService {
 
     await this.ticketRepository.createTickets(userId, bookTicketDto, basePrice)
 
+    const newTickets = await this.ticketRepository.findExistingTickets(scheduleId, seatCodes)
+
     return {
       message: 'Tickets booked successfully',
       scheduleId,
       seatCodes,
       totalPrice: basePrice * seatCodes.length,
+      ticketIds: newTickets.map((t) => t.id),
     }
   }
 
@@ -86,10 +89,6 @@ export class TicketService {
 
     if (ticket.userId !== userId) {
       throw new ForbiddenException('You can only cancel your own tickets')
-    }
-
-    if (ticket.status === 'CANCELLED') {
-      throw new BadRequestException('Ticket is already cancelled')
     }
 
     if (new Date() > ticket.schedule.startTime) {
