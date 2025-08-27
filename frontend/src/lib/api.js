@@ -67,8 +67,22 @@ export const movieAPI = {
   delete: (id, confirm = false) =>
     api.delete(`/movies/${id}`, { data: { confirm } }),
   getCategories: () => api.get("/movies/categories"),
-  toggleFavorite: (id) => api.put(`/movies/${id}/favorite`),
-  checkFavoriteStatus: (id) => api.get(`/movies/${id}/favorite/status`),
+  toggleFavorite: (id, token) =>
+    api.put(
+      `/movies/${id}/favorite`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    ),
+
+  checkFavoriteStatus: (id, token) =>
+    api.get(`/movies/${id}/favorite/status`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  getFavorites: (params = {}, token) =>
+    api.get(`/movies/favorites`, {
+      params,
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 };
 
 export const cinemaAPI = {
@@ -99,6 +113,29 @@ export const scheduleAPI = {
 export const ticketsAPI = {
   getAvailableSeats: (scheduleId) =>
     api.get(`/tickets/schedule/${scheduleId}/available-seats`),
+  getByUserId: (userId) => api.get(`/tickets/user/${userId}`),
+  bookTickets: (data) => api.post("/tickets/book", data),
+  delete: (id) => api.delete(`/tickets/${id}`),
 };
+
+export const paymentAPI = {
+  getUserPayments: (userId) => api.get(`/payments/user/${userId}`),
+  getById: (id) => api.get(`/payments/${id}`),
+  create: (data) => api.post("/payments", data),
+};
+
+export const userAPI = {
+  getAll: (params = {}) => api.get('/users', { params }),
+  getById: (id) => api.get(`/users/${id}`),
+  create: (data) => api.post('/users', data),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  delete: (id) => api.delete(`/users/${id}`),
+};
+
+export const statisticsAPI = {
+  getRevenue: (params = {}) => api.get('/statistics/revenue', { params }),
+  getBookings: (params = {}) => api.get('/statistics/bookings', { params }),
+};
+
 
 export default api;
