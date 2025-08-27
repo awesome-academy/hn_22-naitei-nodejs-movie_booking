@@ -78,8 +78,9 @@ export const movieAPI = {
     api.get(`/movies/${id}/favorite/status`, {
       headers: { Authorization: `Bearer ${token}` },
     }),
-  getFavorites: (token) =>
+  getFavorites: (params = {}, token) =>
     api.get(`/movies/favorites`, {
+      params,
       headers: { Authorization: `Bearer ${token}` },
     }),
 };
