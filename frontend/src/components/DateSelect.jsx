@@ -6,23 +6,26 @@ import { toast } from "react-hot-toast";
 
 const DateSelect = forwardRef(({ dateTime = [], id }, ref) => {
   const grouped = useMemo(() => {
+    const now = new Date();
     const obj = {};
-    dateTime.forEach((sch) => {
-      const dateKey = new Date(sch.startTime).toISOString().slice(0, 10);
-      const cinemaName =
-        sch.room?.cinema?.name || `Cinema ${sch.room?.cinemaId || ""}`;
-      const roomName = sch.room?.name || `Room ${sch.roomId}`;
-      if (!obj[dateKey]) obj[dateKey] = {};
-      if (!obj[dateKey][cinemaName]) obj[dateKey][cinemaName] = {};
-      if (!obj[dateKey][cinemaName][roomName])
-        obj[dateKey][cinemaName][roomName] = [];
-      obj[dateKey][cinemaName][roomName].push({
-        time: new Date(sch.startTime).toISOString().slice(11, 16),
-        scheduleId: sch.id,
-        cinemaId: sch.room?.cinema?.id,
-        roomId: sch.roomId,
+    dateTime
+      .filter((sch) => new Date(sch.startTime) > now)
+      .forEach((sch) => {
+        const dateKey = new Date(sch.startTime).toISOString().slice(0, 10);
+        const cinemaName =
+          sch.room?.cinema?.name || `Cinema ${sch.room?.cinemaId || ""}`;
+        const roomName = sch.room?.name || `Room ${sch.roomId}`;
+        if (!obj[dateKey]) obj[dateKey] = {};
+        if (!obj[dateKey][cinemaName]) obj[dateKey][cinemaName] = {};
+        if (!obj[dateKey][cinemaName][roomName])
+          obj[dateKey][cinemaName][roomName] = [];
+        obj[dateKey][cinemaName][roomName].push({
+          time: new Date(sch.startTime).toISOString().slice(11, 16),
+          scheduleId: sch.id,
+          cinemaId: sch.room?.cinema?.id,
+          roomId: sch.roomId,
+        });
       });
-    });
     return obj;
   }, [dateTime]);
 

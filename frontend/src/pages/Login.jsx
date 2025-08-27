@@ -109,9 +109,8 @@ const Login = () => {
               type="email"
               name="email"
               placeholder="Enter your email address"
-              className={`w-full px-4 py-2 border ${
-                fieldErrors.email ? "border-red-500" : "border-gray-300"
-              } text-gray-900 placeholder:text-gray-400 rounded-xl`}
+              className={`w-full px-4 py-2 border ${fieldErrors.email ? "border-red-500" : "border-gray-300"
+                } text-gray-900 placeholder:text-gray-400 rounded-xl`}
               value={formData.email}
               onChange={handleChange}
               required
@@ -127,9 +126,8 @@ const Login = () => {
               type="password"
               name="password"
               placeholder="Enter your password"
-              className={`w-full px-4 py-2 border ${
-                fieldErrors.password ? "border-red-500" : "border-gray-300"
-              } text-gray-900 placeholder:text-gray-400 rounded-xl`}
+              className={`w-full px-4 py-2 border ${fieldErrors.password ? "border-red-500" : "border-gray-300"
+                } text-gray-900 placeholder:text-gray-400 rounded-xl`}
               value={formData.password}
               onChange={handleChange}
               required
@@ -152,14 +150,37 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full bg-primary text-white py-2 rounded-xl transition ${
-              loading
+            className={`w-full bg-primary text-white py-2 rounded-xl transition ${loading
                 ? "opacity-50 cursor-not-allowed"
                 : "hover:bg-primary-dull"
-            }`}
+              }`}
           >
             {loading ? "Logging in..." : "Log in"}
           </button>
+
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  // Gọi backend để lấy URL Google OAuth
+                  const res = await api.get("/auth/google-link");
+                  const { url } = res.data;
+                  window.location.href = url; // Redirect sang Google
+                } catch (error) {
+                  toast.error("Không thể kết nối Google Login!");
+                }
+              }}
+              className="w-full border border-gray-300 py-2 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-100 transition"
+            >
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="Google"
+                className="w-5 h-5"
+              />
+              <span className="text-gray-700">Đăng nhập với Google</span>
+            </button>
+          </div>
         </form>
 
         <p className="text-sm text-center mt-4 text-gray-800">

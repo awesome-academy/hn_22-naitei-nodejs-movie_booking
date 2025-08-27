@@ -22,7 +22,12 @@ import ManageMovies from "./pages/admin/ManageMovies";
 import ManageCinemas from "./pages/admin/ManageCinemas";
 import ManageSchedules from "./pages/admin/ManageSchedules";
 import ManageRoles from "./pages/admin/ManageRoles";
+import OauthGoogleCallback from "./pages/authGoogleCallback ";
 import ManageUsers from "./pages/admin/ManageUsers";
+import Payment from "./pages/Payment";
+import Releases from "./pages/Releases";
+import Cinemas from "./pages/Cinemas";
+import CinemaDetails from "./pages/CinemaDetails";
 
 const App = () => {
   const isAdminRoute = useLocation().pathname.startsWith("/admin");
@@ -34,14 +39,19 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/oauth-google-callback" element={<OauthGoogleCallback />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/movies" element={<Movies />} />
           <Route path="/movies/:id" element={<MovieDetails />} />
           <Route path="/movies/:id/:date" element={<SeatLayout />} />
+          <Route path="/cinemas" element={<Cinemas />} />
+          <Route path="/cinemas/:id" element={<CinemaDetails />} />
           <Route path="/my-bookings" element={<MyBookings />} />
-          <Route path="/favorite" element={<Favorite />} />
+          <Route path="/favorites" element={<Favorite />} />
+          <Route path="/releases" element={<Releases />} />
+          <Route path="/payment" element={<Payment />} />
           <Route path="/admin/*" element={
             <ProtectedAdminRoute>
               <AdminLayout />
