@@ -57,7 +57,7 @@ const PaymentPage = () => {
   };
 
   return (
-    <div className=" relative flex min-h-screen items-center justify-center py-12 mt-20 background-color">
+    <div className="relative flex min-h-screen items-center justify-center py-12 mt-20 background-color">
       <button
         onClick={() => navigate(-1)}
         className="absolute flex top-20 left-20 ml-4 mt-4 items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
