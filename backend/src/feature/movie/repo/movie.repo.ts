@@ -225,4 +225,12 @@ export class MovieRepository {
       _count: undefined,
     }))
   }
+
+  async findFavoritesByUser(userId: number) {
+    // Nếu bạn có model Favorite { userId, movieId }
+    return this.prisma.favorite.findMany({
+      where: { userId },
+      select: { movieId: true },
+    })
+  }
 }

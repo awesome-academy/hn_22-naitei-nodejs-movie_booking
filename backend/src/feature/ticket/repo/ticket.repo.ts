@@ -88,11 +88,8 @@ export class TicketRepository {
   }
 
   async deleteTicket(id: number) {
-    return this.prisma.ticket.update({
+    return this.prisma.ticket.delete({
       where: { id },
-      data: {
-        status: 'CANCELLED',
-      },
     })
   }
 

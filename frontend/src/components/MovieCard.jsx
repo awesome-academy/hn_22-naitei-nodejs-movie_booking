@@ -3,9 +3,13 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import timeFormat from "../lib/timeFormat";
 import { movieAPI } from "../lib/api";
+import { useAuth } from "../contexts/AuthContext";
+import { toast } from "react-hot-toast";
 
-const MovieCard = ({ movie }) => {
+const MovieCard = ({ movie, hideFavCount }) => {
   const navigate = useNavigate();
+  const { isLoggedIn, auth } = useAuth();
+  const token = auth.accessToken;
 
   if (!movie) return null;
 
@@ -20,10 +24,9 @@ const MovieCard = ({ movie }) => {
       typeof movie.favoritesCount === "number" ? movie.favoritesCount : 0
     );
 
-    const token = localStorage.getItem("accessToken");
     if (typeof movie.isFavorited !== "boolean" && token) {
       movieAPI
-        .checkFavoriteStatus(movie.id)
+        .checkFavoriteStatus(movie.id, token)
         .then((res) => {
           if (typeof res.data?.favorited === "boolean") {
             setIsFav(res.data.favorited);
@@ -31,7 +34,7 @@ const MovieCard = ({ movie }) => {
         })
         .catch(() => {});
     }
-  }, [movie.id]);
+  }, [movie.id, token]);
 
   const handleClick = () => {
     navigate(`/movies/${movie.id}`);
@@ -40,8 +43,15 @@ const MovieCard = ({ movie }) => {
 
   const handleToggleFavorite = async (e) => {
     e.stopPropagation();
+    if (!isLoggedIn) {
+      toast.error("Vui lòng đăng nhập để thêm vào yêu thích!");
+      setTimeout(() => {
+        navigate("/login");
+      }, 800);
+      return;
+    }
     try {
-      const res = await movieAPI.toggleFavorite(movie.id);
+      const res = await movieAPI.toggleFavorite(movie.id, token);
       const nextFavorited = res.data?.favorited;
       const countFromServer = res.data?.favoritesCount;
       setIsFav(nextFavorited);
@@ -51,6 +61,7 @@ const MovieCard = ({ movie }) => {
           : Math.max(0, prev + (nextFavorited ? 1 : -1))
       );
     } catch (err) {
+      toast.error("Lỗi khi thêm vào yêu thích!");
       console.error("Error toggling favorite:", err);
     }
   };
@@ -88,25 +99,28 @@ const MovieCard = ({ movie }) => {
           className="flex items-center gap-1 text-sm mt-1 pr-1 group"
           onClick={handleToggleFavorite}
           title={isFav ? "Remove from favorites" : "Add to favorites"}
+          disabled={!isLoggedIn}
         >
           <Star
             className={`w-5 h-5 transition 
-          ${
-            isFav
-              ? "text-primary fill-primary"
-              : "text-primary fill-none stroke-primary group-hover:fill-primary/30"
-          }`}
+              ${
+                isFav
+                  ? "text-primary fill-primary"
+                  : "text-primary fill-none stroke-primary group-hover:fill-primary/30"
+              }`}
             fill={isFav ? "currentColor" : "none"}
             stroke="currentColor"
           />
 
-          <span
-            className={`ml-1 font-medium ${
-              isFav ? "text-primary" : "text-gray-400"
-            }`}
-          >
-            {favCount}
-          </span>
+          {!hideFavCount && (
+            <span
+              className={`ml-1 font-medium ${
+                isFav ? "text-primary" : "text-gray-400"
+              }`}
+            >
+              {favCount}
+            </span>
+          )}
         </button>
       </div>
     </div>

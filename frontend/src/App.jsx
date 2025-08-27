@@ -22,6 +22,10 @@ import ManageCinemas from "./pages/admin/ManageCinemas";
 import ManageSchedules from "./pages/admin/ManageSchedules";
 import ManageRoles from "./pages/admin/ManageRoles";
 import ManageUsers from "./pages/admin/ManageUsers";
+import Payment from "./pages/Payment";
+import Releases from "./pages/Releases";
+import Cinemas from "./pages/Cinemas";
+import CinemaDetails from "./pages/CinemaDetails";
 
 const App = () => {
   const isAdminRoute = useLocation().pathname.startsWith("/admin");
@@ -39,9 +43,13 @@ const App = () => {
           <Route path="/movies" element={<Movies />} />
           <Route path="/movies/:id" element={<MovieDetails />} />
           <Route path="/movies/:id/:date" element={<SeatLayout />} />
+          <Route path="/cinemas" element={<Cinemas />} />
+          <Route path="/cinemas/:id" element={<CinemaDetails />} />
           <Route path="/my-bookings" element={<MyBookings />} />
-          <Route path="/favorite" element={<Favorite />} />
-          <Route path="/admin/*" element={<AdminLayout />} >
+          <Route path="/favorites" element={<Favorite />} />
+          <Route path="/releases" element={<Releases />} />
+          <Route path="/payment" element={<Payment />} />
+          <Route path="/admin/*" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="manage-movies" element={<ManageMovies />} />
             <Route path="manage-permissions" element={<ManagePermissions />} />

@@ -41,6 +41,12 @@ export class MovieController {
     return this.movieService.getTopFavoriteMovies()
   }
 
+  @Get('favorites')
+  @UseGuards(AccessTokenGuard)
+  async getFavoriteMovies(@ActiveUser('userId') userId: number) {
+    return this.movieService.getFavoriteMovies(userId)
+  }
+
   @Get(':id')
   async getMovieById(@Param('id', ParseIntPipe) id: number) {
     return this.movieService.getMovieById(id)

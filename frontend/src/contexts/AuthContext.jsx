@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import api from "../lib/api";
 
 const AuthContext = createContext();
 
@@ -15,30 +16,59 @@ export const AuthProvider = ({ children }) => {
     const refreshToken = localStorage.getItem("refreshToken");
     const userStr = localStorage.getItem("user");
 
-    if (token && userStr) {
-      setAuth({
-        isLoggedIn: true,
-        user: JSON.parse(userStr),
-        accessToken: token,
-        refreshToken,
-      });
-    }
-  }, []);
-
-  // Đồng bộ login giữa các tab
-  useEffect(() => {
-    const syncAuth = () => {
-      const token = localStorage.getItem("accessToken");
-      const refreshToken = localStorage.getItem("refreshToken");
-      const userStr = localStorage.getItem("user");
-
-      if (token && userStr) {
+    if (token && refreshToken) {
+      // Nếu có token nhưng chưa có user info, lấy thông tin user
+      if (!userStr) {
+        fetchUserInfo(token);
+      } else {
         setAuth({
           isLoggedIn: true,
           user: JSON.parse(userStr),
           accessToken: token,
           refreshToken,
         });
+      }
+    }
+  }, []);
+
+  // Thêm hàm fetch user info
+  const fetchUserInfo = async (token) => {
+    try {
+      const response = await api.get("/users/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const user = response.data;
+      localStorage.setItem("user", JSON.stringify(user));
+      setAuth((prev) => ({
+        ...prev,
+        isLoggedIn: true,
+        user,
+      }));
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+      logout();
+    }
+  };
+
+  useEffect(() => {
+    const syncAuth = () => {
+      const token = localStorage.getItem("accessToken");
+      const refreshToken = localStorage.getItem("refreshToken");
+      const userStr = localStorage.getItem("user");
+
+      if (token && refreshToken) {
+        if (!userStr) {
+          fetchUserInfo(token);
+        } else {
+          setAuth({
+            isLoggedIn: true,
+            user: JSON.parse(userStr),
+            accessToken: token,
+            refreshToken,
+          });
+        }
       } else {
         setAuth({
           isLoggedIn: false,
@@ -52,17 +82,23 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener("storage", syncAuth);
   }, []);
 
-  const login = ({ user, accessToken, refreshToken }) => {
+  const login = async ({ user, accessToken, refreshToken }) => {
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
-    localStorage.setItem("user", JSON.stringify(user));
 
-    setAuth({
-      isLoggedIn: true,
-      user,
-      accessToken,
-      refreshToken,
-    });
+    // Nếu có user info thì lưu luôn, không thì fetch
+    if (user) {
+      localStorage.setItem("user", JSON.stringify(user));
+      setAuth({
+        isLoggedIn: true,
+        user,
+        accessToken,
+        refreshToken,
+      });
+    } else {
+      // Trường hợp đăng nhập Google chỉ trả về token
+      await fetchUserInfo(accessToken);
+    }
   };
 
   const logout = () => {
@@ -79,7 +115,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         auth,
-        isLoggedIn: auth.isLoggedIn, // thêm dòng này!
+        isLoggedIn: auth.isLoggedIn,
         login,
         logout,
         user: auth.user,
