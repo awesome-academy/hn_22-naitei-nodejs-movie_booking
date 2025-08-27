@@ -87,11 +87,23 @@ export class GoogleService {
       }
 
       // 6. Sinh token hệ thống
-      return this.authService.generateTokens({
+      const appTokens = await this.authService.generateTokens({
         userId: user.id,
         roleId: user.roleId,
         roleName: user.role.name,
-      })
+      });
+
+      // 👇 Thay vì chỉ return tokens, ta trả thêm user
+      return {
+        ...appTokens,
+        user: {
+          name: user.name,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          avatar: user.avatar,
+          roleId: user.roleId,
+        },
+      };
     } catch (error) {
       console.error('Error in googleCallback:', error)
       throw error

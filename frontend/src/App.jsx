@@ -21,6 +21,7 @@ import ManageMovies from "./pages/admin/ManageMovies";
 import ManageCinemas from "./pages/admin/ManageCinemas";
 import ManageSchedules from "./pages/admin/ManageSchedules";
 import ManageRoles from "./pages/admin/ManageRoles";
+import OauthGoogleCallback from "./pages/authGoogleCallback ";
 import ManageUsers from "./pages/admin/ManageUsers";
 import Payment from "./pages/Payment";
 import Releases from "./pages/Releases";
@@ -37,6 +38,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/oauth-google-callback" element={<OauthGoogleCallback />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/profile" element={<Profile />} />

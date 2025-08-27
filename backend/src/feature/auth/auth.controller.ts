@@ -42,7 +42,7 @@ export class AuthController {
       const data = await this.googleService.googleCallback({ code, state })
 
       return res.redirect(
-        `${envConfig.GOOGLE_CLIENT_REDIRECT_URL}?accessToken=${data.accessToken}&refreshToken=${data.refreshToken}`,
+        `${envConfig.GOOGLE_CLIENT_REDIRECT_URL}?accessToken=${data.accessToken}&refreshToken=${data.refreshToken}&user=${encodeURIComponent(JSON.stringify(data.user))}`,
       )
     } catch (error) {
       const message =
