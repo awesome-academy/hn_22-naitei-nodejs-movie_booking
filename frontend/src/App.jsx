@@ -21,6 +21,7 @@ import ManageMovies from "./pages/admin/ManageMovies";
 import ManageCinemas from "./pages/admin/ManageCinemas";
 import ManageSchedules from "./pages/admin/ManageSchedules";
 import ManageRoles from "./pages/admin/ManageRoles";
+import ManageUsers from "./pages/admin/ManageUsers";
 import Payment from "./pages/Payment";
 import Releases from "./pages/Releases";
 import Cinemas from "./pages/Cinemas";
@@ -55,6 +56,7 @@ const App = () => {
             <Route path="manage-cinemas" element={<ManageCinemas />} />
             <Route path="manage-schedules" element={<ManageSchedules />} />
             <Route path="manage-roles" element={<ManageRoles />} />
+            <Route path="manage-users" element={<ManageUsers />} />
           </Route>
         </Routes>
         {!isAdminRoute && <Footer />}

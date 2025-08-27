@@ -124,4 +124,18 @@ export const paymentAPI = {
   create: (data) => api.post("/payments", data),
 };
 
+export const userAPI = {
+  getAll: (params = {}) => api.get('/users', { params }),
+  getById: (id) => api.get(`/users/${id}`),
+  create: (data) => api.post('/users', data),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  delete: (id) => api.delete(`/users/${id}`),
+};
+
+export const statisticsAPI = {
+  getRevenue: (params = {}) => api.get('/statistics/revenue', { params }),
+  getBookings: (params = {}) => api.get('/statistics/bookings', { params }),
+};
+
+
 export default api;
