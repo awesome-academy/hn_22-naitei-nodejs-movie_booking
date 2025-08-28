@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
-import { MenuIcon, XIcon, LogOut } from "lucide-react";
+import { MenuIcon, SearchIcon, XIcon, User, LogOut, LayoutDashboard } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-hot-toast";
 
@@ -88,6 +88,19 @@ const Navbar = () => {
         >
           Favorites
         </Link>
+        {/* Dashboard link cho admin trong mobile menu */}
+        {auth.isLoggedIn && auth.user?.roleId === 1 && (
+          <Link
+            onClick={() => {
+              scrollTo(0, 0);
+              setIsOpen(false);
+            }}
+            to="/admin"
+            className="text-primary font-semibold"
+          >
+            Admin Dashboard
+          </Link>
+        )}
       </div>
 
       <div className="flex items-center gap-8">
@@ -119,6 +132,19 @@ const Navbar = () => {
                 >
                   Manage Account
                 </Link>
+                {/* Dashboard link cho admin (roleId = 1) */}
+                {auth.user?.roleId === 1 && (
+                  <Link
+                    to="/admin"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    <div className="flex items-center gap-2">
+                      
+                      Admin Dashboard
+                    </div>
+                  </Link>
+                )}
                 <Link
                   to="/my-bookings"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

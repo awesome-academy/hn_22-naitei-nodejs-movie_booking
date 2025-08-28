@@ -49,11 +49,8 @@ const Login = () => {
           state: { selectedSeats: location.state.selectedSeats },
           replace: true,
         });
-      } else if (user.roleId === 1) {
-        navigate("/admin");
-      } else if (user.roleId === 2) {
-        navigate("/");
       } else {
+        // Tất cả user (bao gồm admin) đều về trang chủ
         navigate("/");
       }
     } catch (err) {

@@ -29,15 +29,9 @@ const OauthGoogleCallback = () => {
 
       toast.success("Đăng nhập Google thành công!")
 
-      // redirect theo roleId
+      // redirect về trang chủ cho tất cả user
       setTimeout(() => {
-        if (user?.roleId === 1) {
-          navigate("/admin", { replace: true })
-        } else if (user?.roleId === 2) {
-          navigate("/", { replace: true })
-        } else {
-          navigate("/", { replace: true })
-        }
+        navigate("/", { replace: true })
       }, 1000) 
     } else {
       const errorMessage = searchParams.get("errorMessage")

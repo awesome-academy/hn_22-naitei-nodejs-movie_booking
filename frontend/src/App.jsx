@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import AdminLayout from "./pages/admin/Layout";
 import Dashboard from "./pages/admin/Dashboard";
 import ManagePermissions from "./pages/admin/ManagePermissions";
+import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import ManageMovies from "./pages/admin/ManageMovies";
 import ManageCinemas from "./pages/admin/ManageCinemas";
 import ManageSchedules from "./pages/admin/ManageSchedules";
@@ -51,7 +52,11 @@ const App = () => {
           <Route path="/favorites" element={<Favorite />} />
           <Route path="/releases" element={<Releases />} />
           <Route path="/payment" element={<Payment />} />
-          <Route path="/admin/*" element={<AdminLayout />}>
+          <Route path="/admin/*" element={
+            <ProtectedAdminRoute>
+              <AdminLayout />
+            </ProtectedAdminRoute>
+          } >
             <Route index element={<Dashboard />} />
             <Route path="manage-movies" element={<ManageMovies />} />
             <Route path="manage-permissions" element={<ManagePermissions />} />
