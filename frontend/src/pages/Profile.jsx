@@ -8,10 +8,12 @@ const Profile = () => {
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
 
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || ""); // Tách avatar preview riêng
+
   const [formData, setFormData] = useState({
-    name: user?.name || "",
-    phoneNumber: user?.phoneNumber || "",
-    avatar: user?.avatar || "",
+    name: "",
+    phoneNumber: "",
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -21,17 +23,19 @@ const Profile = () => {
   });
 
   const [editProfile, setEditProfile] = useState(false);
-  const [showAvatarInput, setShowAvatarInput] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
 
+  // Khởi tạo dữ liệu khi component mount hoặc user thay đổi
   useEffect(() => {
-    setFormData({
-      name: user?.name || "",
-      phoneNumber: user?.phoneNumber || "",
-      avatar: user?.avatar || "",
-    });
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        phoneNumber: user.phoneNumber || "",
+      });
+      setAvatarPreview(user.avatar || "https://cdn2.fptshop.com.vn/small/avatar_trang_1_cd729c335b.jpg");
+    }
   }, [user]);
 
   const handleChange = (e) => {
@@ -51,15 +55,22 @@ const Profile = () => {
     setLoading(true);
     setFieldErrors({});
 
-    const updatedFields = {};
-    Object.entries(formData).forEach(([key, value]) => {
-      const original = user?.[key] || "";
-      if (value !== original) {
-        updatedFields[key] = value;
-      }
-    });
+    const form = new FormData();
 
-    if (Object.keys(updatedFields).length === 0) {
+    // Chỉ gửi các field có thay đổi
+    if (formData.phoneNumber !== user?.phoneNumber) {
+      form.append("phoneNumber", formData.phoneNumber);
+    }
+    if (formData.name !== user?.name) {
+      form.append("name", formData.name);
+    }
+
+    // Nếu có file avatar mới
+    if (avatarFile) {
+      form.append("avatar", avatarFile);
+    }
+
+    if ([...form.entries()].length === 0) {
       toast("No changes to update.");
       setLoading(false);
       setEditProfile(false);
@@ -67,11 +78,30 @@ const Profile = () => {
     }
 
     try {
-      const res = await api.put("/user/update-profile", updatedFields);
-      updateUser({ ...user, ...res.data.user, ...updatedFields });
+      const res = await api.put("/profiles/update-profile", form, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      // Cập nhật user trong context (res.data là object user)
+      updateUser(res.data);
+
+      // Cập nhật avatar preview nếu có avatar mới
+      if (res.data.avatar) {
+        setAvatarPreview(res.data.avatar);
+      }
+
       toast.success("Profile updated successfully!");
+
+      // Reset states
       setEditProfile(false);
-      setShowAvatarInput(false);
+      setAvatarFile(null);
+
+      // Giải phóng URL tạm thời nếu có
+      if (avatarFile) {
+        URL.revokeObjectURL(avatarPreview);
+      }
     } catch (err) {
       const data = err.response?.data;
       const errs = {};
@@ -86,51 +116,33 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
+
   };
 
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatarFile(file);
+      // Tạo preview tạm thời
+      const previewUrl = URL.createObjectURL(file);
+      setAvatarPreview(previewUrl);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    // Reset về giá trị ban đầu từ user
+    setFormData({
+      name: user?.name || "",
+      phoneNumber: user?.phoneNumber || "",
+    });
+    setAvatarPreview(user?.avatar || "https://cdn2.fptshop.com.vn/small/avatar_trang_1_cd729c335b.jpg");
+    setAvatarFile(null);
+    setEditProfile(false);
     setFieldErrors({});
 
-    const { password, newPassword, confirmNewPassword } = passwordData;
-
-    if (newPassword !== confirmNewPassword) {
-      setFieldErrors({
-        confirmNewPassword: "Confirmation password does not match.",
-      });
-      toast.error("Confirmation password does not match.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      await api.put("/user/change-password", {
-        password,
-        newPassword,
-        confirmNewPassword,
-      });
-
-      toast.success("Password changed successfully!");
-      setPasswordData({
-        password: "",
-        newPassword: "",
-        confirmNewPassword: "",
-      });
-      setShowPasswordModal(false);
-    } catch (err) {
-      const data = err.response?.data;
-      const errs = {};
-      if (Array.isArray(data?.message)) {
-        data.message.forEach((entry) => {
-          if (entry.field) errs[entry.field] = entry.error;
-        });
-      } else {
-        toast.error(data?.message || "Password change failed.");
-      }
-      setFieldErrors(errs);
-    } finally {
-      setLoading(false);
+    // Giải phóng URL tạm thời nếu có
+    if (avatarFile) {
+      URL.revokeObjectURL(avatarPreview);
     }
   };
 
@@ -148,17 +160,22 @@ const Profile = () => {
         <div className="flex flex-col md:flex-row gap-8">
           <div className="w-full md:w-3/8 flex flex-col items-center py-6">
             <img
-              src={
-                formData.avatar ||
-                "https://cdn2.fptshop.com.vn/small/avatar_trang_1_cd729c335b.jpg"
-              }
+              src={avatarPreview}
               alt="Avatar"
-              onClick={() => editProfile && setShowAvatarInput(true)}
+              onClick={() => editProfile && document.getElementById("avatarInput").click()}
               title={editProfile ? "Click to update avatar" : ""}
-              className={`w-48 h-48 rounded-full object-cover border border-gray-300 shadow-md transition cursor-pointer ${
-                editProfile ? "hover:opacity-80 hover:scale-105" : ""
-              }`}
+              className={`w-48 h-48 rounded-full object-cover border border-gray-300 shadow-md transition cursor-pointer ${editProfile ? "hover:opacity-80 hover:scale-105" : ""
+                }`}
             />
+            {editProfile && (
+              <input
+                id="avatarInput"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+            )}
           </div>
 
           <div className="w-full md:w-5/8">
@@ -173,7 +190,7 @@ const Profile = () => {
                 <p>
                   <strong>Phone Number:</strong> {user?.phoneNumber || "—"}
                 </p>
-                <div className="absolute bottom-6 left-6 right-6 flex gap-4 justify-end">
+                <div className="mt-8 flex gap-4 justify-end">
                   <button
                     onClick={() => setShowPasswordModal(true)}
                     className="bg-primary-dull hover:bg-primary-dull text-white px-4 py-2 rounded-xl transition"
@@ -222,40 +239,18 @@ const Profile = () => {
                   )}
                 </div>
 
-                {showAvatarInput && (
-                  <div>
-                    <label className="block mb-1 text-gray-800">
-                      Avatar URL
-                    </label>
-                    <input
-                      name="avatar"
-                      value={formData.avatar}
-                      onChange={handleChange}
-                      className="w-full border px-4 py-2 border-gray-300 text-gray-800 rounded-xl placeholder:text-gray-400"
-                      placeholder="Dán link ảnh đại diện mới..."
-                    />
-                    {fieldErrors.avatar && (
-                      <p className="text-sm text-red-600 mt-1">
-                        {fieldErrors.avatar}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                <div className="absolute bottom-6 left-6 right-6 flex gap-4 justify-end">
+                <div className="mt-8 flex gap-4 justify-end">
                   <button
                     type="button"
-                    onClick={() => {
-                      setEditProfile(false);
-                      setShowAvatarInput(false);
-                    }}
-                    className="text-gray-700 hover:underline"
+                    onClick={handleCancelEdit}
+                    className="text-gray-700 hover:underline px-4 py-2"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="bg-primary text-white px-4 py-2 rounded-xl"
+                    disabled={loading}
+                    className="bg-primary text-white px-4 py-2 rounded-xl disabled:opacity-50"
                   >
                     {loading ? "Saving..." : "Save"}
                   </button>
@@ -265,9 +260,16 @@ const Profile = () => {
           </div>
         </div>
 
+        {/* Password Modal */}
         {showPasswordModal && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
             <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md relative">
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-xl font-bold"
+              >
+                ✕
+              </button>
               <h3 className="text-xl text-gray-800 font-semibold mb-4">
                 Reset Password
               </h3>
@@ -330,13 +332,14 @@ const Profile = () => {
                   <button
                     type="button"
                     onClick={() => setShowPasswordModal(false)}
-                    className="text-gray-800 hover:underline"
+                    className="text-gray-800 hover:underline px-4 py-2"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="bg-primary text-white px-4 py-2 rounded-xl"
+                    disabled={loading}
+                    className="bg-primary text-white px-4 py-2 rounded-xl disabled:opacity-50"
                   >
                     {loading ? "Changing..." : "Submit"}
                   </button>

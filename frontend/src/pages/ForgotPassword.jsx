@@ -39,7 +39,7 @@ const ForgotPassword = () => {
     setFieldErrors({});
 
     try {
-      await api.post("/user/send-otp", {
+      await api.post("/profiles/send-otp", {
         email: formData.email,
         type: "FORGOT_PASSWORD",
       });
@@ -96,7 +96,7 @@ const ForgotPassword = () => {
     }
 
     try {
-      await api.post("/user/forgot-password", {
+      await api.post("/profiles/forgot-password", {
         email: formData.email,
         code: otp,
         newPassword,
@@ -148,7 +148,7 @@ const ForgotPassword = () => {
     setFieldErrors({});
 
     try {
-      await api.post("/user/send-otp", {
+      await api.post("/profiles/send-otp", {
         email: formData.email,
         type: "FORGOT_PASSWORD",
       });
